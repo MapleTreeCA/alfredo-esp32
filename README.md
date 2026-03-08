@@ -1,28 +1,30 @@
 # Alfredo ESP32
 
-Alfredo 是一个面向 `ESP32` 语音机器人的独立固件仓库，当前以 `M5Stack CoreS3` 为主。
+Language: **English** | [简体中文](README_zh.md)
 
-这个仓库已经包含可直接编译的完整源码树、板级配置、构建脚本和 Alfred 表情资源，不再是只分发补丁的中转仓。
+Alfredo ESP32 is a standalone firmware repository for an `ESP32` voice robot, currently focused on `M5Stack CoreS3`.
 
-## 当前改动重点
+This repository already contains the full source tree, board configuration, build scripts, and Alfred face assets. It is no longer a patch-only overlay repository.
 
-- Alfred 风格表情映射
-- 说话时嘴型动画
-- 睡眠状态 `zZz` 浮层
-- `LVGL` mmap 图像缩放修复
-- CoreS3 触摸调音量优化
-- CoreS3 默认表情集切到 `twemoji_128`
+## Highlights
 
-## 编译环境
+- Alfred-style emotion mapping
+- Speaking mouth animation
+- Sleep-state `zZz` overlay
+- `LVGL` mmap image scaling fix
+- CoreS3 touch volume adjustment tuning
+- CoreS3 default emoji collection switched to `twemoji_128`
+
+## Build Requirements
 
 - `ESP-IDF 5.4+`
 - `Python 3`
 - `Pillow`
 - `rsvg-convert`
 
-## 快速开始
+## Quick Start
 
-### 1. 首次准备
+### 1. Initial setup
 
 ```bash
 idf.py set-target esp32s3
@@ -30,47 +32,47 @@ idf.py reconfigure
 python3 scripts/generate_alfred_emoji.py
 ```
 
-`idf.py reconfigure` 会先准备依赖组件目录，随后再生成 Alfred 表情资源。
+`idf.py reconfigure` prepares dependency components first, then Alfred emoji assets can be generated.
 
-### 2. 编译 CoreS3 固件
+### 2. Build CoreS3 firmware
 
 ```bash
 python3 scripts/release.py m5stack-core-s3
 ```
 
-如果你只想手动编译，也可以参考 [main/boards/m5stack-core-s3/README.md](main/boards/m5stack-core-s3/README.md)。
+If you prefer a manual build flow, see [main/boards/m5stack-core-s3/README.md](main/boards/m5stack-core-s3/README.md).
 
-### 3. 烧录
+### 3. Flash
 
 ```bash
 idf.py flash monitor
 ```
 
-## 常用命令
+## Common Commands
 
-重新生成 Alfred 表情资源：
+Regenerate Alfred emoji assets:
 
 ```bash
 python3 scripts/generate_alfred_emoji.py
 ```
 
-仅查看 CoreS3 板级说明：
+Read the CoreS3 board notes:
 
 ```bash
 sed -n '1,120p' main/boards/m5stack-core-s3/README.md
 ```
 
-## 仓库结构
+## Repository Layout
 
-- `main/`: 固件主源码
-- `main/boards/m5stack-core-s3/`: CoreS3 板级配置和说明
-- `scripts/generate_alfred_emoji.py`: Alfred 表情生成脚本
-- `scripts/alfred_svg/`: Alfred SVG 表情源文件
-- `docs/`: 其它开发和构建文档
-- `sdkconfig.defaults*`: 默认构建配置
+- `main/`: firmware source code
+- `main/boards/m5stack-core-s3/`: CoreS3 board config and notes
+- `scripts/generate_alfred_emoji.py`: Alfred emoji generation script
+- `scripts/alfred_svg/`: Alfred SVG source assets
+- `docs/`: additional development and build docs
+- `sdkconfig.defaults*`: default build configuration
 
-## 说明
+## Notes
 
-- 当前 CoreS3 表情缩放系数是 `90`
-- 仓库保留了与现有构建链兼容的目录结构，方便后续继续演进
-- `build/`、`managed_components/`、本地 `sdkconfig` 等再生内容默认不入库
+- The current CoreS3 face scale is `90`
+- The repository keeps a layout compatible with the existing build chain
+- Regenerated content such as `build/`, `managed_components/`, and local `sdkconfig` files is intentionally excluded from version control
