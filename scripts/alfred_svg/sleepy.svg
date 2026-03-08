@@ -1,0 +1,11 @@
+<svg viewBox="0 0 128 128" aria-hidden="true">
+      <path d="M22 32h18" stroke="#111" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+      <path d="M88 32h18" stroke="#111" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+      <path d="M24 56c4 3 12 3 16 0" stroke="#111" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+      <path d="M88 56c4 3 12 3 16 0" stroke="#111" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+      <rect x="16" y="84" width="26" height="17" rx="8.5" fill="#f2a0a5"/>
+      <rect x="86" y="84" width="26" height="17" rx="8.5" fill="#f2a0a5"/>
+      <g class="mouth">
+        <path d="M49 96c5-8 25-8 30 0" stroke="#111" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+      </g>
+    </svg>
