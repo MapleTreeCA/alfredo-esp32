@@ -2,7 +2,6 @@
 #include "cores3_audio_codec.h"
 #include "display/lcd_display.h"
 #include "application.h"
-#include "assets/lang_config.h"
 #include "config.h"
 #include "power_save_timer.h"
 #include "i2c_device.h"
@@ -15,6 +14,8 @@
 #include <esp_lcd_ili9341.h>
 #include <esp_timer.h>
 #include "esp_video.h"
+#include <algorithm>
+#include <cstdio>
 
 #define TAG "M5StackCoreS3Board"
 
@@ -127,23 +128,7 @@ private:
     EspVideo* camera_;
     esp_timer_handle_t touchpad_timer_;
     PowerSaveTimer* power_save_timer_;
-
-    void AdjustOutputVolume(int delta) {
-        auto codec = GetAudioCodec();
-        if (codec == nullptr) {
-            return;
-        }
-
-        int volume = codec->output_volume() + delta;
-        if (volume > 100) {
-            volume = 100;
-        } else if (volume < 0) {
-            volume = 0;
-        }
-
-        codec->SetOutputVolume(volume);
-        GetDisplay()->ShowNotification(std::string(Lang::Strings::VOLUME) + std::to_string(volume) + "%");
-    }
+    bool manual_sleep_face_ = false;
 
     void InitializePowerSaveTimer() {
         power_save_timer_ = new PowerSaveTimer(-1, 60, 300);
@@ -213,40 +198,92 @@ private:
     void PollTouchpad() {
         static bool was_touched = false;
         static int64_t touch_start_time = 0;
-        static int touch_start_x = -1;
-        const int64_t TOUCH_THRESHOLD_MS = 500;  // 触摸时长阈值，超过500ms视为长按
+        static int release_x = -1;
+        static int release_y = -1;
+        constexpr int64_t SHORT_TOUCH_THRESHOLD_MS = 500;
+        constexpr int64_t LONG_TOUCH_THRESHOLD_MS = 700;
+        constexpr int kVolumeStep = 8;
+        constexpr int kMinVolume = 1;
+        constexpr int kMaxVolume = 100;
+        constexpr int kVolumeZoneX = DISPLAY_WIDTH * 2 / 3;
         
         ft6336_->UpdateTouchPoint();
         auto& touch_point = ft6336_->GetTouchPoint();
         
-        // 检测触摸开始
-        if (touch_point.num > 0 && !was_touched) {
-            was_touched = true;
-            touch_start_time = esp_timer_get_time() / 1000; // 转换为毫秒
-            touch_start_x = touch_point.x;
-        } 
-        // 检测触摸释放
-        else if (touch_point.num == 0 && was_touched) {
-            was_touched = false;
-            int64_t touch_duration = (esp_timer_get_time() / 1000) - touch_start_time;
-            
-            // 只有短触才触发
-            if (touch_duration < TOUCH_THRESHOLD_MS) {
-                auto& app = Application::GetInstance();
-                if (app.GetDeviceState() == kDeviceStateStarting) {
-                    EnterWifiConfigMode();
-                    return;
-                }
-                app.ToggleChatState();
-            } else if (touch_start_x >= 0) {
-                if (touch_start_x < DISPLAY_WIDTH / 3) {
-                    AdjustOutputVolume(-10);
-                } else if (touch_start_x > DISPLAY_WIDTH * 2 / 3) {
-                    AdjustOutputVolume(10);
-                }
+        // Touch begin / move
+        if (touch_point.num > 0) {
+            if (!was_touched) {
+                was_touched = true;
+                touch_start_time = esp_timer_get_time() / 1000;
             }
-            touch_start_x = -1;
+            release_x = touch_point.x;
+            release_y = touch_point.y;
+            return;
         }
+
+        // Touch release
+        if (!was_touched) {
+            return;
+        }
+
+        was_touched = false;
+        int64_t touch_duration = (esp_timer_get_time() / 1000) - touch_start_time;
+        int x = release_x;
+        int y = release_y;
+        release_x = -1;
+        release_y = -1;
+
+        auto& app = Application::GetInstance();
+
+        if (touch_duration >= LONG_TOUCH_THRESHOLD_MS) {
+            manual_sleep_face_ = true;
+            GetDisplay()->SetPowerSaveMode(true);
+            GetDisplay()->ShowNotification("Sleep face", 1200);
+            return;
+        }
+
+        if (touch_duration >= SHORT_TOUCH_THRESHOLD_MS) {
+            return;
+        }
+
+        // Any short touch wakes manual sleepy face first.
+        if (manual_sleep_face_) {
+            manual_sleep_face_ = false;
+            GetDisplay()->SetPowerSaveMode(false);
+            return;
+        }
+
+        power_save_timer_->WakeUp();
+
+        if (app.GetDeviceState() == kDeviceStateStarting) {
+            EnterWifiConfigMode();
+            return;
+        }
+
+        // Right-top / right-bottom short tap adjusts output volume.
+        if (x >= kVolumeZoneX) {
+            auto* codec = GetAudioCodec();
+            if (codec != nullptr) {
+                int current = codec->output_volume();
+                int next = current;
+                if (y < DISPLAY_HEIGHT / 2) {
+                    next = std::min(kMaxVolume, current + kVolumeStep);
+                } else {
+                    next = std::max(kMinVolume, current - kVolumeStep);
+                }
+
+                if (next != current) {
+                    codec->SetOutputVolume(next);
+                }
+
+                char notification[32];
+                std::snprintf(notification, sizeof(notification), "Volume: %d", codec->output_volume());
+                GetDisplay()->ShowNotification(notification, 1200);
+            }
+            return;
+        }
+
+        app.ToggleChatState();
     }
 
     void InitializeFt6336TouchPad() {

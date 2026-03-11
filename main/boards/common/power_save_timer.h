@@ -14,6 +14,7 @@ public:
     void OnEnterSleepMode(std::function<void()> callback);
     void OnExitSleepMode(std::function<void()> callback);
     void OnShutdownRequest(std::function<void()> callback);
+    bool IsInSleepMode() const;
     void WakeUp();
 
 private:

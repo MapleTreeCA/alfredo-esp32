@@ -3,7 +3,7 @@
 Download GitHub Actions artifacts and rename them with version numbers.
 
 Usage:
-    python download_github_runs.py 2.0.4 https://github.com/78/xiaozhi-esp32/actions/runs/18866246016
+    python download_github_runs.py 2.0.4 https://github.com/example/alfredo-esp32/actions/runs/18866246016
 
 Output:
     Files are downloaded to releases/<version>/ directory relative to the project root.
@@ -32,7 +32,7 @@ def parse_github_run_url(url: str) -> tuple[str, str, str]:
     Returns:
         Tuple of (owner, repo, run_id)
     """
-    # Example: https://github.com/78/xiaozhi-esp32/actions/runs/18866246016
+    # Example: https://github.com/example/alfredo-esp32/actions/runs/18866246016
     pattern = r'github\.com/([^/]+)/([^/]+)/actions/runs/(\d+)'
     match = re.search(pattern, url)
     
@@ -127,16 +127,16 @@ def rename_artifact(original_name: str, version: str) -> str:
     Rename artifact according to the specified rules.
     
     Rules:
-    - Remove "xiaozhi_" prefix
+    - Remove the firmware prefix
     - Remove hash suffix (underscore followed by hex string)
     - Add version prefix (e.g., "v2.0.4_")
     - Add .zip extension
     
     Examples:
-        xiaozhi_atk-dnesp32s3-box0_43ef2f4e7f0957dc62ec7d628ac2819d226127b8
+        alfredo_atk-dnesp32s3-box0_43ef2f4e7f0957dc62ec7d628ac2819d226127b8
         -> v2.0.4_atk-dnesp32s3-box0.zip
         
-        xiaozhi_waveshare-esp32-p4-nano-10.1-a_43ef2f4e7f0957dc62ec7d628ac2819d226127b8
+        alfredo_waveshare-esp32-p4-nano-10.1-a_43ef2f4e7f0957dc62ec7d628ac2819d226127b8
         -> v2.0.4_waveshare-esp32-p4-nano-10.1-a.zip
     
     Args:
@@ -146,10 +146,11 @@ def rename_artifact(original_name: str, version: str) -> str:
     Returns:
         New filename
     """
-    # Remove "xiaozhi_" prefix
+    # Remove the leading firmware prefix, keep the board name + hash.
     name = original_name
-    if name.startswith("xiaozhi_"):
-        name = name[len("xiaozhi_"):]
+    parts = name.split("_", 2)
+    if len(parts) == 3:
+        name = f"{parts[1]}_{parts[2]}"
     
     # Remove known extensions only (not using splitext to avoid issues with
     # names containing dots like "esp32-s3-touch-amoled-2.06")
@@ -291,4 +292,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

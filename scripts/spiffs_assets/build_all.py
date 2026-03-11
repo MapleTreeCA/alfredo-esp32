@@ -8,13 +8,25 @@ This script calls build.py with different combinations of:
 - emoji_collections
 
 And generates assets.bin files with names like:
-wn9_nihaoxiaozhi_tts-font_puhui_common_20_4-emojis_32.bin
+<wakenet_model>-font_puhui_common_20_4-emojis_32.bin
 """
 
 import os
 import sys
 import shutil
 import subprocess
+
+
+def find_font_component_dir():
+    for root in ("../../managed_components", "../../components"):
+        base = os.path.abspath(os.path.join(os.path.dirname(__file__), root))
+        if not os.path.isdir(base):
+            continue
+        for name in sorted(os.listdir(base)):
+            candidate = os.path.join(base, name)
+            if os.path.isdir(os.path.join(candidate, "cbin")) and os.path.isdir(os.path.join(candidate, "png")):
+                return candidate
+    raise FileNotFoundError("Could not locate the emoji/font component directory")
 
 
 def ensure_dir(directory):
@@ -31,6 +43,7 @@ def get_file_path(base_dir, filename):
 
 def build_assets(wakenet_model, text_font, emoji_collection, build_dir, final_dir):
     """Build assets.bin using build.py with given parameters"""
+    font_component_dir = find_font_component_dir()
     
     # Prepare arguments for build.py
     cmd = [sys.executable, "build.py"]
@@ -40,11 +53,11 @@ def build_assets(wakenet_model, text_font, emoji_collection, build_dir, final_di
         cmd.extend(["--wakenet_model", wakenet_path])
     
     if text_font != "none":
-        text_font_path = os.path.join("../../components/78__xiaozhi-fonts/cbin", f"{text_font}.bin")
+        text_font_path = os.path.join(font_component_dir, "cbin", f"{text_font}.bin")
         cmd.extend(["--text_font", text_font_path])
     
     if emoji_collection != "none":
-        emoji_path = os.path.join("../../components/xiaozhi-fonts/build", emoji_collection)
+        emoji_path = os.path.join(font_component_dir, "build", emoji_collection)
         cmd.extend(["--emoji_collection", emoji_path])
     
     print(f"\n正在构建: {wakenet_model}-{text_font}-{emoji_collection}")
@@ -144,5 +157,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 

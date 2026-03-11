@@ -46,6 +46,8 @@ private:
     std::string last_detected_wake_word_;
     std::vector<int16_t> input_buffer_;
     std::mutex input_buffer_mutex_;
+    uint32_t debug_feed_chunks_since_start_ = 0;
+    bool debug_logged_first_feed_after_start_ = false;
 
     TaskHandle_t wake_word_encode_task_ = nullptr;
     StaticTask_t* wake_word_encode_task_buffer_ = nullptr;

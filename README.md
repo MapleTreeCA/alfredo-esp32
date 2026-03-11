@@ -68,11 +68,13 @@ sed -n '1,120p' main/boards/m5stack-core-s3/README.md
 - `main/boards/m5stack-core-s3/`: CoreS3 board config and notes
 - `scripts/generate_alfred_emoji.py`: Alfred emoji generation script
 - `scripts/alfred_svg/`: Alfred SVG source assets
+- `components/alfredo-fonts/`: local font and emoji component
 - `docs/`: additional development and build docs
 - `sdkconfig.defaults*`: default build configuration
 
 ## Notes
 
+- The component dependency is local: `alfredo-fonts -> ../components/alfredo-fonts`
 - The current CoreS3 face scale is `90`
 - The repository keeps a layout compatible with the existing build chain
 - Regenerated content such as `build/`, `managed_components/`, and local `sdkconfig` files is intentionally excluded from version control

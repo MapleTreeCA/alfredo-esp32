@@ -8,17 +8,17 @@ body:
       label: Answers checklist.
       description: Before submitting a new issue, please follow the checklist and try to find the answer.
       options:
-        - label: I have read the documentation [XiaoZhi AI Programming Guide](https://ccnphfhqs21z.feishu.cn/wiki/F5krwD16viZoF0kKkvDcrZNYnhb) and the issue is not addressed there.
+        - label: I have read the documentation [Alfredo Programming Guide](https://ccnphfhqs21z.feishu.cn/wiki/F5krwD16viZoF0kKkvDcrZNYnhb) and the issue is not addressed there.
           required: true
         - label: I have updated my branch (master or release) to the latest version and checked that the issue is present there.
           required: true
         - label: I have searched the issue tracker for a similar issue and not found a similar issue.
           required: true
   - type: input
-    id: xiaozhi_ai_version
+    id: alfredo_ai_version
     attributes:
-      label: XiaoZhi AI version.
-      description: On which XiaoZhi AI version does this issue occur on? Run `git describe --tags` to find it.
+      label: Alfredo version.
+      description: On which Alfredo version does this issue occur on? Run `git describe --tags` to find it.
       placeholder: ex. v1.1.0-44-g140aab8
     validations:
       required: true

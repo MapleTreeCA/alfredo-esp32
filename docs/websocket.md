@@ -226,8 +226,9 @@ WebSocket 文本帧以 JSON 方式传输，以下为常见的 `"type"` 字段及
    - 成功接收后设备端会设置事件标志，表示 WebSocket 通道就绪。
 
 2. **STT**  
-   - `{"session_id": "xxx", "type": "stt", "text": "..."}`
+   - `{"session_id": "xxx", "type": "stt", "state": "interim|final", "text": "..."}`
    - 表示服务器端识别到了用户语音。（例如语音转文本结果）  
+   - `state` 为可选：`interim` 表示中间识别文本，`final` 表示最终识别文本；设备可统一按最新文本刷新显示。  
    - 设备可能将此文本显示到屏幕上，后续再进入回答等流程。
 
 3. **LLM**  
@@ -457,6 +458,7 @@ stateDiagram
    {
      "session_id": "xxx",
      "type": "stt",
+     "state": "interim",
      "text": "用户说的话"
    }
    ```

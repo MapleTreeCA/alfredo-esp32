@@ -107,11 +107,18 @@ void AfeAudioProcessor::Feed(std::vector<int16_t>&& data) {
 }
 
 void AfeAudioProcessor::Start() {
+    is_speaking_ = false;
     xEventGroupSetBits(event_group_, PROCESSOR_RUNNING);
 }
 
 void AfeAudioProcessor::Stop() {
     xEventGroupClearBits(event_group_, PROCESSOR_RUNNING);
+
+    bool was_speaking = is_speaking_;
+    is_speaking_ = false;
+    if (was_speaking && vad_state_change_callback_) {
+        vad_state_change_callback_(false);
+    }
 
     std::lock_guard<std::mutex> lock(input_buffer_mutex_);
     if (afe_data_ != nullptr) {

@@ -10,12 +10,14 @@
 #include <mutex>
 #include <deque>
 #include <memory>
+#include <atomic>
 
 #include "protocol.h"
-#include "ota.h"
 #include "audio_service.h"
 #include "device_state.h"
 #include "device_state_machine.h"
+
+struct cJSON;
 
 // Main event bits
 #define MAIN_EVENT_SCHEDULE             (1 << 0)
@@ -31,6 +33,7 @@
 #define MAIN_EVENT_START_LISTENING      (1 << 10)
 #define MAIN_EVENT_STOP_LISTENING       (1 << 11)
 #define MAIN_EVENT_STATE_CHANGED        (1 << 12)
+#define MAIN_EVENT_RESUME_LISTENING     (1 << 13)
 
 
 enum AecMode {
@@ -105,7 +108,6 @@ public:
 
     void Reboot();
     void WakeWordInvoke(const std::string& wake_word);
-    bool UpgradeFirmware(const std::string& url, const std::string& version = "");
     bool CanEnterSleepMode();
     void SendMcpMessage(const std::string& payload);
     void SetAecMode(AecMode mode);
@@ -116,7 +118,7 @@ public:
     /**
      * Reset protocol resources (thread-safe)
      * Can be called from any task to release resources allocated after network connected
-     * This includes closing audio channel, resetting protocol and ota objects
+     * This includes closing audio channel and resetting protocol objects
      */
     void ResetProtocol();
 
@@ -134,14 +136,19 @@ private:
     AecMode aec_mode_ = kAecOff;
     std::string last_error_message_;
     AudioService audio_service_;
-    std::unique_ptr<Ota> ota_;
 
     bool has_server_time_ = false;
     bool aborted_ = false;
     bool assets_version_checked_ = false;
+    std::string firmware_version_;
     bool play_popup_on_listening_ = false;  // Flag to play popup sound after state changes to listening
+    bool pending_resume_listening_ = false;
+    std::atomic<bool> tts_downlink_window_open_{false};
+    std::atomic<int64_t> last_tts_audio_at_us_{0};
+    std::atomic<int> last_tts_frame_duration_ms_{60};
     int clock_ticks_ = 0;
     TaskHandle_t activation_task_handle_ = nullptr;
+    esp_timer_handle_t listening_resume_timer_handle_ = nullptr;
 
 
     // Event handlers
@@ -149,6 +156,7 @@ private:
     void HandleToggleChatEvent();
     void HandleStartListeningEvent();
     void HandleStopListeningEvent();
+    void HandleResumeListeningEvent();
     void HandleNetworkConnectedEvent();
     void HandleNetworkDisconnectedEvent();
     void HandleActivationDoneEvent();
@@ -163,12 +171,39 @@ private:
     void CheckAssetsVersion();
     void CheckNewVersion();
     void InitializeProtocol();
-    void ShowActivationCode(const std::string& code, const std::string& message);
+    void ApplyRuntimeConfig();
     void SetListeningMode(ListeningMode mode);
     ListeningMode GetDefaultListeningMode() const;
+    void ScheduleResumeListeningAfterGuard();
+    void CancelPendingListeningResume();
+    bool ShouldAcceptIncomingTtsAudio() const;
+    void OpenTtsDownlinkWindow();
+    void CloseTtsDownlinkWindow();
+    void NoteIncomingTtsAudio(const AudioStreamPacket& packet);
+    void DrainTtsPlaybackUntilQuiet();
+
+    // Server event dispatch (JSON downlink)
+    void HandleIncomingJsonMessage(const cJSON* root);
+    void HandleIncomingTtsMessage(const cJSON* root);
+    void HandleIncomingSttMessage(const cJSON* root);
+    void HandleIncomingLlmMessage(const cJSON* root);
+    void HandleIncomingMcpMessage(const cJSON* root);
+    void HandleIncomingSystemMessage(const cJSON* root);
+    void HandleWriteSdCardRuntimeConfig(const std::string& config_json, bool reboot_after_write);
+    void HandleIncomingAlertMessage(const cJSON* root);
+#if CONFIG_RECEIVE_CUSTOM_MESSAGE
+    void HandleIncomingCustomMessage(const cJSON* root);
+#endif
     
     // State change handler called by state machine
     void OnStateChanged(DeviceState old_state, DeviceState new_state);
+    AecMode ParseAecMode(const std::string& mode) const;
+
+    bool continue_listening_after_tts_stop_ = true;
+    int post_tts_listen_guard_ms_ = 0;
+    int tts_downlink_drain_quiet_ms_ = 0;
+    bool wake_word_detection_in_listening_ = false;
+    bool xiaozhi_compat_mode_ = false;
 };
 
 

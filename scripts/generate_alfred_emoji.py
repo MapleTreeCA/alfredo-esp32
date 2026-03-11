@@ -10,11 +10,28 @@ from PIL import Image
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = SCRIPT_DIR.parent
-DEFAULT_COMPONENT_DIR = PROJECT_DIR / "managed_components" / "78__xiaozhi-fonts"
 SVG_DIR = SCRIPT_DIR / "alfred_svg"
 SPEAKING_SUFFIX = "speaking"
 MOUTH_SPEAKING_TRANSFORM = "translate(0 5) translate(64 92) scale(1 0.5) translate(-64 -92)"
 CONTENT_PADDING_DIVISOR = 32
+
+
+def find_default_component_dir() -> Path:
+    candidates = []
+    for root in (PROJECT_DIR / "managed_components", PROJECT_DIR / "components"):
+        if not root.exists():
+            continue
+        for child in sorted(root.iterdir()):
+            if not child.is_dir():
+                continue
+            if (child / "src" / "emoji").exists() and (child / "png").exists():
+                candidates.append(child)
+    if not candidates:
+        raise FileNotFoundError("Could not locate the emoji/font component directory")
+    return candidates[0]
+
+
+DEFAULT_COMPONENT_DIR = find_default_component_dir()
 
 FACE_TO_EMOTIONS = {
     "calm": ["neutral", "cool", "confident"],
@@ -294,12 +311,12 @@ def write_font_sources(src_dir: Path):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Generate Alfred emoji assets into a xiaozhi-fonts component directory."
+        description="Generate Alfred emoji assets into the emoji/font component directory."
     )
     parser.add_argument(
         "--component-dir",
         default=str(DEFAULT_COMPONENT_DIR),
-        help="Path to the target xiaozhi-fonts component directory",
+        help="Path to the target emoji/font component directory",
     )
     return parser.parse_args()
 
@@ -358,7 +375,7 @@ def main():
                 )
 
     write_font_sources(src_dir)
-    print(f"Generated Alfred emoji assets for xiaozhi-fonts: {component_dir}")
+    print(f"Generated Alfred emoji assets for component: {component_dir}")
 
 
 if __name__ == "__main__":

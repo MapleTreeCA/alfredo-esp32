@@ -6,6 +6,7 @@
 #include <condition_variable>
 #include <chrono>
 #include <mutex>
+#include <atomic>
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -38,7 +39,10 @@
 
 #define OPUS_FRAME_DURATION_MS 60
 #define MAX_ENCODE_TASKS_IN_QUEUE 2
-#define MAX_PLAYBACK_TASKS_IN_QUEUE 2
+// Keep a modest prebuffer to smooth jitter without adding too much startup latency.
+#define MAX_PLAYBACK_TASKS_IN_QUEUE 10
+#define PLAYBACK_PREBUFFER_MIN_FRAMES 2
+#define PLAYBACK_PREBUFFER_MAX_WAIT_MS 140
 #define MAX_DECODE_PACKETS_IN_QUEUE (2400 / OPUS_FRAME_DURATION_MS)
 #define MAX_SEND_PACKETS_IN_QUEUE (2400 / OPUS_FRAME_DURATION_MS)
 #define AUDIO_TESTING_MAX_DURATION_MS 10000
@@ -129,6 +133,9 @@ public:
 
     bool PushPacketToDecodeQueue(std::unique_ptr<AudioStreamPacket> packet, bool wait = false);
     std::unique_ptr<AudioStreamPacket> PopPacketFromSendQueue();
+    void ResetUplinkStateForNewTurn();
+    void SetMicSendGateEnabled(bool enable) { mic_send_gate_enabled_.store(enable, std::memory_order_relaxed); }
+    bool IsMicSendGateEnabled() const { return mic_send_gate_enabled_.load(std::memory_order_relaxed); }
     void PlaySound(const std::string_view& sound);
     bool ReadAudioData(std::vector<int16_t>& data, int sample_rate, int samples);
     void ResetDecoder();
@@ -179,6 +186,10 @@ private:
     bool voice_detected_ = false;
     bool service_stopped_ = true;
     bool audio_input_need_warmup_ = false;
+    std::atomic<int64_t> vad_speech_started_at_us_{0};
+    std::atomic<int64_t> last_vad_speech_at_us_{0};
+    std::atomic<bool> mic_send_gate_enabled_{true};
+    uint32_t dropped_silence_frames_ = 0;
 
     esp_timer_handle_t audio_power_timer_ = nullptr;
     std::chrono::steady_clock::time_point last_input_time_;
@@ -190,6 +201,7 @@ private:
     void PushTaskToEncodeQueue(AudioTaskType type, std::vector<int16_t>&& pcm);
     void SetDecodeSampleRate(int sample_rate, int frame_duration);
     void CheckAndUpdateAudioPowerState();
+    bool ShouldForwardProcessedFrame(const std::vector<int16_t>& pcm);
 };
 
 #endif

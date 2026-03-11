@@ -3,7 +3,6 @@
 
 #include <http.h>
 #include <web_socket.h>
-#include <mqtt.h>
 #include <udp.h>
 #include <string>
 #include <functional>

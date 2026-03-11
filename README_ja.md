@@ -34,7 +34,7 @@ v1の安定版は1.9.2です。`git checkout v1`でv1に切り替えることが
 - ESP32-C3、ESP32-S3、ESP32-P4チッププラットフォーム対応
 - デバイス側MCPによるデバイス制御（音量・明るさ調整、アクション制御など）
 - クラウド側MCPで大規模モデル能力を拡張（スマートホーム制御、PCデスクトップ操作、知識検索、メール送受信など）
-- カスタマイズ可能なウェイクワード、フォント、絵文字、チャット背景、オンラインWeb編集に対応 ([カスタムアセットジェネレーター](https://github.com/78/xiaozhi-assets-generator))
+- カスタマイズ可能なウェイクワード、フォント、絵文字、チャット背景、オンラインWeb編集に対応
 
 ## ハードウェア
 
@@ -108,7 +108,7 @@ Feishuドキュメントチュートリアルをご覧ください：
 
 初心者の方は、まず開発環境を構築せずに書き込み可能なファームウェアを使用することをおすすめします。
 
-ファームウェアはデフォルトで公式 [xiaozhi.me](https://xiaozhi.me) サーバーに接続します。個人ユーザーはアカウント登録でQwenリアルタイムモデルを無料で利用できます。
+ファームウェアはデフォルトで公式サーバーに接続します。個人ユーザーはアカウント登録でQwenリアルタイムモデルを無料で利用できます。
 
 👉 [初心者向けファームウェア書き込みガイド](https://ccnphfhqs21z.feishu.cn/wiki/Zpz4wXBtdimBrLk25WdcXzxcnNS)
 
@@ -129,26 +129,13 @@ Feishuドキュメントチュートリアルをご覧ください：
 
 ## 大規模モデル設定
 
-すでにシャオジーAIチャットボットデバイスをお持ちで、公式サーバーに接続済みの場合は、[xiaozhi.me](https://xiaozhi.me) コンソールで設定できます。
+すでにデバイスをお持ちで、公式サーバーに接続済みの場合は、公式コンソールで設定できます。
 
 👉 [バックエンド操作ビデオチュートリアル（旧インターフェース）](https://www.bilibili.com/video/BV1jUCUY2EKM/)
 
 ## 関連オープンソースプロジェクト
 
-個人PCでサーバーをデプロイする場合は、以下のオープンソースプロジェクトを参照してください：
-
-- [xinnan-tech/xiaozhi-esp32-server](https://github.com/xinnan-tech/xiaozhi-esp32-server) Pythonサーバー
-- [joey-zhou/xiaozhi-esp32-server-java](https://github.com/joey-zhou/xiaozhi-esp32-server-java) Javaサーバー
-- [AnimeAIChat/xiaozhi-server-go](https://github.com/AnimeAIChat/xiaozhi-server-go) Golangサーバー
-- [hackers365/xiaozhi-esp32-server-golang](https://github.com/hackers365/xiaozhi-esp32-server-golang) Golangサーバー
-
-シャオジー通信プロトコルを利用した他のクライアントプロジェクト：
-
-- [huangjunsen0406/py-xiaozhi](https://github.com/huangjunsen0406/py-xiaozhi) Pythonクライアント
-- [TOM88812/xiaozhi-android-client](https://github.com/TOM88812/xiaozhi-android-client) Androidクライアント
-- [100askTeam/xiaozhi-linux](http://github.com/100askTeam/xiaozhi-linux) 百問科技提供のLinuxクライアント
-- [78/xiaozhi-sf32](https://github.com/78/xiaozhi-sf32) 思澈科技のBluetoothチップファームウェア
-- [QuecPython/solution-xiaozhiAI](https://github.com/QuecPython/solution-xiaozhiAI) 移遠提供のQuecPythonファームウェア
+個人PCでサーバーをデプロイする場合や他のクライアント実装を探す場合は、プロジェクト Wiki に掲載されている関連実装一覧を参照してください。
 
 ## プロジェクトについて
 
@@ -157,13 +144,3 @@ Feishuドキュメントチュートリアルをご覧ください：
 このプロジェクトを通じて、AIハードウェア開発を理解し、急速に進化する大規模言語モデルを実際のハードウェアデバイスに応用できるようになることを目指しています。
 
 ご意見やご提案があれば、いつでもIssueを提出するか、[Discord](https://discord.gg/bXqgAfRm) または QQグループ：1011329060 にご参加ください。
-
-## スター履歴
-
-<a href="https://star-history.com/#78/xiaozhi-esp32&Date">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=78/xiaozhi-esp32&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=78/xiaozhi-esp32&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=78/xiaozhi-esp32&type=Date" />
- </picture>
-</a> 

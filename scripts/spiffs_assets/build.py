@@ -8,9 +8,9 @@ Usage:
         --emoji_collection <emoji_collection_dir>
 
 Example:
-    ./build.py --wakenet_model ../../managed_components/espressif__esp-sr/model/wakenet_model/wn9_nihaoxiaozhi_tts \
-        --text_font ../../components/xiaozhi-fonts/build/font_puhui_common_20_4.bin \
-        --emoji_collection ../../components/xiaozhi-fonts/build/emojis_64/
+    ./build.py --wakenet_model <wakenet_model_dir> \
+        --text_font <font_file.bin> \
+        --emoji_collection <emoji_collection_dir>
 """
 
 import os

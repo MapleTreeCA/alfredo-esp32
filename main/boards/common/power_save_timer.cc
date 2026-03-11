@@ -59,6 +59,10 @@ void PowerSaveTimer::OnShutdownRequest(std::function<void()> callback) {
     on_shutdown_request_ = callback;
 }
 
+bool PowerSaveTimer::IsInSleepMode() const {
+    return in_sleep_mode_;
+}
+
 void PowerSaveTimer::PowerSaveCheck() {
     auto& app = Application::GetInstance();
     if (!in_sleep_mode_ && !app.CanEnterSleepMode()) {

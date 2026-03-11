@@ -8,16 +8,16 @@ body:
       label: Answers checklist.
       description: Before submitting a new issue, please follow the checklist and try to find the answer.
       options:
-        - label: I  have read the documentation [XiaoZhi AI Programming Guide](https://ccnphfhqs21z.feishu.cn/wiki/F5krwD16viZoF0kKkvDcrZNYnhb) and the issue is not addressed there.
+        - label: I have read the documentation [Alfredo Programming Guide](https://ccnphfhqs21z.feishu.cn/wiki/F5krwD16viZoF0kKkvDcrZNYnhb) and the issue is not addressed there.
           required: true
         - label: I have updated my firmware to the latest version and checked that the issue is present there.
           required: true
         - label: I have searched the issue tracker for a similar issue and not found a similar issue.
           required: true
   - type: input
-    id: xiaozhi_ai_firmware_version
+    id: alfredo_firmware_version
     attributes:
-      label: XiaoZhi AI firmware version.
+      label: Alfredo firmware version.
       description: On which firmware version does this issue occur on?
       placeholder: ex. v1.2.1_bread-compact-wifi
     validations:

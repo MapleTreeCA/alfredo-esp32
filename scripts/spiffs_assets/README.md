@@ -38,15 +38,15 @@
 ```bash
 # 完整参数示例
 ./build.py \
-    --wakenet_model ../../managed_components/espressif__esp-sr/model/wakenet_model/wn9_nihaoxiaozhi_tts \
-    --text_font ../../components/xiaozhi-fonts/build/font_puhui_common_20_4.bin \
-    --emoji_collection ../../components/xiaozhi-fonts/build/emojis_64/
+    --wakenet_model <wakenet_model_dir> \
+    --text_font <font_file.bin> \
+    --emoji_collection <emoji_collection_dir>
 
 # 仅处理字体文件
-./build.py --text_font ../../components/xiaozhi-fonts/build/font_puhui_common_20_4.bin
+./build.py --text_font <font_file.bin>
 
 # 仅处理表情符号
-./build.py --emoji_collection ../../components/xiaozhi-fonts/build/emojis_64/
+./build.py --emoji_collection <emoji_collection_dir>
 ```
 
 ## 工作流程

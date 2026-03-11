@@ -2,6 +2,7 @@
 #define CUSTOM_WAKE_WORD_H
 
 #include <esp_attr.h>
+#include <esp_afe_sr_models.h>
 #include <esp_mn_iface.h>
 #include <esp_mn_models.h>
 #include <model_path.h>
@@ -19,6 +20,13 @@
 
 class CustomWakeWord : public WakeWord {
 public:
+    struct Command {
+        std::string command;
+        std::string phonemes;
+        std::string text;
+        std::string action;
+    };
+
     CustomWakeWord();
     ~CustomWakeWord();
 
@@ -33,12 +41,6 @@ public:
     const std::string& GetLastDetectedWakeWord() const { return last_detected_wake_word_; }
 
 private:
-    struct Command {
-        std::string command;
-        std::string text;
-        std::string action;
-    };
-
     // multinet 相关成员变量
     esp_mn_iface_t* multinet_ = nullptr;
     model_iface_data_t* multinet_model_data_ = nullptr;
@@ -54,7 +56,14 @@ private:
     std::string last_detected_wake_word_;
     std::atomic<bool> running_ = false;
     std::vector<int16_t> input_buffer_;
+    std::vector<int16_t> afe_input_buffer_;
+    std::vector<int16_t> detect_buffer_;
     std::mutex input_buffer_mutex_;
+    const esp_afe_sr_iface_t* afe_iface_ = nullptr;
+    esp_afe_sr_data_t* afe_data_ = nullptr;
+    bool afe_speech_active_ = false;
+    int afe_speech_frames_ = 0;
+    float afe_speech_peak_volume_db_ = -120.0f;
 
     TaskHandle_t wake_word_encode_task_ = nullptr;
     StaticTask_t* wake_word_encode_task_buffer_ = nullptr;
@@ -65,7 +74,11 @@ private:
     std::condition_variable wake_word_cv_;
 
     void StoreWakeWordData(const std::vector<int16_t>& data);
+    // max_chunks=0 means process all available chunks.
+    void DetectFromBuffer(std::vector<int16_t>& buffer, size_t max_chunks = 0);
+    void AudioDetectionTask();
     void ParseWakenetModelConfig();
+    void ResetAfeSpeechDebugState();
 };
 
 #endif

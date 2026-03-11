@@ -1,0 +1,50 @@
+{
+  "websocket": {
+    "url": "ws://10.0.0.175:18910/ws",
+    "token": "",
+    "version": 1
+  },
+  "wake_word": {
+    "commands": "alfredo;hey alfredo;hello alfredo",
+    "display": "Alfredo",
+    "phonemes": "aLFRdDb;hd aLFRdDb;hcLb aLFRdDb",
+    "threshold": 20
+  },
+  "conversation": {
+    "aec_mode": "off",
+    "continue_listening_after_tts_stop": true,
+    "post_tts_listen_guard_ms": 300,
+    "tts_downlink_drain_quiet_ms": 240,
+    "wake_word_detection_in_listening": false
+  },
+  "audio": {
+    "output_volume": 70,
+    "input_gain": 36,
+    "input_reference": false
+  },
+  "display": {
+    "brightness": 75,
+    "theme": "light"
+  },
+  "wifi": {
+    "sleep_mode": true
+  },
+  "power_save": {
+    "enabled": true,
+    "sleep_seconds": 300,
+    "shutdown_seconds": 3600
+  },
+  "head_gimbal": {
+    "pan_trim": 0,
+    "tilt_trim": 0,
+    "pan_inverted": false,
+    "tilt_inverted": false,
+    "pan_min": 20,
+    "pan_max": 160,
+    "tilt_min": 60,
+    "tilt_max": 120,
+    "center_pan": 90,
+    "center_tilt": 90,
+    "center_duration_ms": 0
+  }
+}

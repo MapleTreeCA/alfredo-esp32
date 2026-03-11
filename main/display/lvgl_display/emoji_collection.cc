@@ -35,7 +35,7 @@ EmojiCollection::~EmojiCollection() {
     emoji_collection_.clear();
 }
 
-// These are generated from Alfred SVG faces in xiaozhi-fonts/src/emoji.
+// These are generated from Alfred SVG faces in the font component's src/emoji.
 extern const lv_image_dsc_t alfred_face_calm_32; // neutral/cool/confident
 extern const lv_image_dsc_t alfred_face_smile_32; // happy
 extern const lv_image_dsc_t alfred_face_laugh_32; // laughing/funny
@@ -72,7 +72,7 @@ Twemoji32::Twemoji32() {
 }
 
 
-// These are generated from Alfred SVG faces in xiaozhi-fonts/src/emoji.
+// These are generated from Alfred SVG faces in the font component's src/emoji.
 extern const lv_image_dsc_t alfred_face_calm_64; // neutral/cool/confident
 extern const lv_image_dsc_t alfred_face_smile_64; // happy
 extern const lv_image_dsc_t alfred_face_laugh_64; // laughing/funny

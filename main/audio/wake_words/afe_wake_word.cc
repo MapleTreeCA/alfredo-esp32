@@ -62,6 +62,16 @@ bool AfeWakeWord::Initialize(AudioCodec* codec, srmodel_list_t* models_list) {
             }
         }
     }
+    if (!wake_words_.empty()) {
+        std::string wake_words_joined;
+        for (size_t i = 0; i < wake_words_.size(); ++i) {
+            if (i > 0) {
+                wake_words_joined += ", ";
+            }
+            wake_words_joined += wake_words_[i];
+        }
+        ESP_LOGI(TAG, "Available wake words: %s", wake_words_joined.c_str());
+    }
 
     std::string input_format;
     for (int i = 0; i < codec_->input_channels() - ref_num; i++) {
@@ -94,10 +104,14 @@ void AfeWakeWord::OnWakeWordDetected(std::function<void(const std::string& wake_
 }
 
 void AfeWakeWord::Start() {
+    debug_feed_chunks_since_start_ = 0;
+    debug_logged_first_feed_after_start_ = false;
+    ESP_LOGI(TAG, "Starting wake word detection");
     xEventGroupSetBits(event_group_, DETECTION_RUNNING_EVENT);
 }
 
 void AfeWakeWord::Stop() {
+    ESP_LOGI(TAG, "Stopping wake word detection after %u feed chunks", debug_feed_chunks_since_start_);
     xEventGroupClearBits(event_group_, DETECTION_RUNNING_EVENT);
 
     std::lock_guard<std::mutex> lock(input_buffer_mutex_);
@@ -116,6 +130,13 @@ void AfeWakeWord::Feed(const std::vector<int16_t>& data) {
     // Check running state inside lock to avoid TOCTOU race with Stop()
     if (!(xEventGroupGetBits(event_group_) & DETECTION_RUNNING_EVENT)) {
         return;
+    }
+    debug_feed_chunks_since_start_++;
+    if (!debug_logged_first_feed_after_start_) {
+        debug_logged_first_feed_after_start_ = true;
+        ESP_LOGI(TAG, "Received first feed chunk after start: %u samples", data.size());
+    } else if (debug_feed_chunks_since_start_ % 500 == 0) {
+        ESP_LOGI(TAG, "Wake word feed alive: %u chunks processed", debug_feed_chunks_since_start_);
     }
     input_buffer_.insert(input_buffer_.end(), data.begin(), data.end());
     size_t chunk_size = afe_iface_->get_feed_chunksize(afe_data_) * codec_->input_channels();
@@ -152,6 +173,7 @@ void AfeWakeWord::AudioDetectionTask() {
         if (res->wakeup_state == WAKENET_DETECTED) {
             Stop();
             last_detected_wake_word_ = wake_words_[res->wakenet_model_index - 1];
+            ESP_LOGI(TAG, "WakeNet detected wake word: %s", last_detected_wake_word_.c_str());
 
             if (wake_word_detected_callback_) {
                 wake_word_detected_callback_(last_detected_wake_word_);

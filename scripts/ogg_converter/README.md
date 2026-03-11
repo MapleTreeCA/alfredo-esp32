@@ -1,6 +1,6 @@
-# ogg_covertor 小智AI OGG 音效批量转换器
+# ogg_covertor Alfredo OGG 音效批量转换器
 
-本脚本为OGG批量转换工具，支持将输入的音频文件转换为小智可使用的OGG格式
+本脚本为 OGG 批量转换工具，支持将输入的音频文件转换为设备可使用的 OGG 格式
 
 基于Python第三方库 `ffmpeg-python` 实现，**需要** `ffmpeg` 环境  
 
@@ -33,4 +33,3 @@ pip install ffmpeg-python
 ```bash
 python ogg_covertor.py
 ```
-

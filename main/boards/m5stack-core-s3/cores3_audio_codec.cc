@@ -14,7 +14,7 @@ CoreS3AudioCodec::CoreS3AudioCodec(void* i2c_master_handle, int input_sample_rat
     input_channels_ = input_reference_ ? 2 : 1; // 输入通道数
     input_sample_rate_ = input_sample_rate;
     output_sample_rate_ = output_sample_rate;
-    input_gain_ = 30;
+    input_gain_ = 36;
 
     CreateDuplexChannels(mclk, bclk, ws, dout, din);
 
@@ -194,7 +194,7 @@ void CoreS3AudioCodec::EnableInput(bool enable) {
     if (enable) {
         esp_codec_dev_sample_info_t fs = {
             .bits_per_sample = 16,
-            .channel = 2,
+            .channel = static_cast<uint8_t>(input_reference_ ? 2 : 1),
             .channel_mask = ESP_CODEC_DEV_MAKE_CHANNEL_MASK(0),
             .sample_rate = (uint32_t)output_sample_rate_,
             .mclk_multiple = 0,

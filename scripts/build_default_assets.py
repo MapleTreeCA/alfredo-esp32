@@ -24,6 +24,9 @@ from datetime import datetime
 # Pack model functions (from pack_model.py)
 # =============================================================================
 
+def split_and_trim(value, delimiter=';'):
+    return [item.strip() for item in value.split(delimiter) if item.strip()]
+
 def struct_pack_string(string, max_len=None):
     """
     pack string to binary data. 
@@ -293,7 +296,8 @@ def process_extra_files(extra_files_dir, assets_dir):
     return extra_files_list
 
 
-def generate_index_json(assets_dir, srmodels, text_font, emoji_collection, extra_files=None, multinet_model_info=None):
+def generate_index_json(assets_dir, srmodels, text_font, emoji_collection, extra_files=None,
+                       multinet_model_info=None, skin_config=None):
     """Generate index.json file"""
     index_data = {
         "version": 1
@@ -313,6 +317,9 @@ def generate_index_json(assets_dir, srmodels, text_font, emoji_collection, extra
     
     if multinet_model_info:
         index_data["multinet_model"] = multinet_model_info
+
+    if skin_config:
+        index_data["skin"] = skin_config
     
     # Write index.json
     index_path = os.path.join(assets_dir, "index.json")
@@ -595,6 +602,9 @@ def read_custom_wake_word_from_sdkconfig(sdkconfig_path):
                 # Extract string value (remove quotes)
                 value = line.split('=', 1)[1].strip('"')
                 config_values['display'] = value
+            elif 'CONFIG_CUSTOM_WAKE_WORD_PHONEMES=' in line and not line.startswith('#'):
+                value = line.split('=', 1)[1].strip('"')
+                config_values['phonemes'] = value
             elif 'CONFIG_CUSTOM_WAKE_WORD_THRESHOLD=' in line and not line.startswith('#'):
                 # Extract numeric value
                 value = line.split('=', 1)[1]
@@ -615,6 +625,7 @@ def read_custom_wake_word_from_sdkconfig(sdkconfig_path):
         return {
             'wake_word': config_values['wake_word'],
             'display': config_values['display'],
+            'phonemes': config_values.get('phonemes', ''),
             'threshold': config_values['threshold'] / 100.0  # Convert to decimal (20 -> 0.2)
         }
     
@@ -683,7 +694,7 @@ def get_multinet_model_paths(model_names, esp_sr_model_path):
     return valid_paths
 
 
-def get_text_font_path(builtin_text_font, xiaozhi_fonts_path):
+def get_text_font_path(builtin_text_font, emoji_fonts_path):
     """
     Get the text font path if needed
     Returns the font file path or None if no font is needed
@@ -697,7 +708,7 @@ def get_text_font_path(builtin_text_font, xiaozhi_fonts_path):
         font_name = builtin_text_font.replace('basic', 'qwen') + '.bin'
     else:
         font_name = builtin_text_font.replace('basic', 'common') + '.bin'
-    font_path = os.path.join(xiaozhi_fonts_path, 'cbin', font_name)
+    font_path = os.path.join(emoji_fonts_path, 'cbin', font_name)
     
     if os.path.exists(font_path):
         return font_path
@@ -706,14 +717,14 @@ def get_text_font_path(builtin_text_font, xiaozhi_fonts_path):
         return None
 
 
-def get_emoji_collection_path(default_emoji_collection, xiaozhi_fonts_path, project_root=None):
+def get_emoji_collection_path(default_emoji_collection, emoji_fonts_path, project_root=None):
     """
     Get the emoji collection path if needed
     Returns the emoji directory path or None if no emoji collection is needed
     
     Supports:
-    - PNG emoji collections from xiaozhi-fonts (e.g., emojis_32, twemoji_64)
-    - GIF emoji collections from xiaozhi-fonts (e.g., noto-emoji_128, noto-emoji_64)
+    - PNG emoji collections from the font component (e.g., emojis_32, twemoji_64)
+    - GIF emoji collections from the font component (e.g., noto-emoji_128, noto-emoji_64)
     - Otto GIF emoji collection (otto-gif)
     """
     if not default_emoji_collection:
@@ -734,20 +745,35 @@ def get_emoji_collection_path(default_emoji_collection, xiaozhi_fonts_path, proj
             return None
     
     # Try PNG emoji collections first (e.g., emojis_32, twemoji_64)
-    emoji_path = os.path.join(xiaozhi_fonts_path, 'png', default_emoji_collection)
+    emoji_path = os.path.join(emoji_fonts_path, 'png', default_emoji_collection)
     if os.path.exists(emoji_path):
         return emoji_path
     
     # Try GIF emoji collections (e.g., noto-emoji_128, noto-emoji_64, noto-emoji_32)
-    emoji_path = os.path.join(xiaozhi_fonts_path, 'gif', default_emoji_collection)
+    emoji_path = os.path.join(emoji_fonts_path, 'gif', default_emoji_collection)
     if os.path.exists(emoji_path):
         return emoji_path
-    
+
     print(f"Warning: Emoji collection directory not found in png/ or gif/: {default_emoji_collection}")
     return None
 
 
-def build_assets_integrated(wakenet_model_paths, multinet_model_paths, text_font_path, emoji_collection_path, extra_files_path, output_path, multinet_model_info=None):
+def find_default_emoji_fonts_path(project_root):
+    for base_dir in ("managed_components", "components"):
+        root = os.path.join(project_root, base_dir)
+        if not os.path.isdir(root):
+            continue
+        for name in sorted(os.listdir(root)):
+            candidate = os.path.join(root, name)
+            if not os.path.isdir(candidate):
+                continue
+            if os.path.isdir(os.path.join(candidate, "cbin")) and os.path.isdir(os.path.join(candidate, "png")):
+                return candidate
+    return None
+
+
+def build_assets_integrated(wakenet_model_paths, multinet_model_paths, text_font_path, emoji_collection_path,
+                           extra_files_path, output_path, multinet_model_info=None, skin_config=None):
     """
     Build assets using integrated functions (no external dependencies)
     """
@@ -771,7 +797,7 @@ def build_assets_integrated(wakenet_model_paths, multinet_model_paths, text_font
         extra_files = process_extra_files(extra_files_path, assets_dir) if extra_files_path else None
         
         # Generate index.json
-        generate_index_json(assets_dir, srmodels, text_font, emoji_collection, extra_files, multinet_model_info)
+        generate_index_json(assets_dir, srmodels, text_font, emoji_collection, extra_files, multinet_model_info, skin_config)
         
         # Generate config.json for packing
         config_path = generate_config_json(temp_build_dir, assets_dir)
@@ -815,13 +841,17 @@ def main():
     parser.add_argument('--emoji_collection', help='Default emoji collection name (e.g., emojis_32)')
     parser.add_argument('--output', required=True, help='Output path for assets.bin')
     parser.add_argument('--esp_sr_model_path', help='Path to ESP-SR model directory')
-    parser.add_argument('--xiaozhi_fonts_path', help='Path to xiaozhi-fonts component directory')
+    parser.add_argument('--emoji_fonts_path', help='Path to the emoji/font component directory')
     parser.add_argument('--extra_files', help='Path to extra files directory to be included in assets')
+    parser.add_argument('--light_text_color', default='#ffffff', help='Light mode text color (hex, e.g. #ffffff)')
+    parser.add_argument('--light_background_color', default='#1a1414', help='Light mode background color (hex, e.g. #1a1414)')
+    parser.add_argument('--dark_text_color', default='#ffffff', help='Dark mode text color (hex, e.g. #ffffff)')
+    parser.add_argument('--dark_background_color', default='#1a1414', help='Dark mode background color (hex, e.g. #1a1414)')
     
     args = parser.parse_args()
     
     # Set default paths if not provided
-    if not args.esp_sr_model_path or not args.xiaozhi_fonts_path:
+    if not args.esp_sr_model_path or not args.emoji_fonts_path:
         # Calculate project root from script location
         script_dir = os.path.dirname(os.path.abspath(__file__))
         project_root = os.path.dirname(script_dir)
@@ -829,8 +859,11 @@ def main():
         if not args.esp_sr_model_path:
             args.esp_sr_model_path = os.path.join(project_root, "managed_components", "espressif__esp-sr", "model")
         
-        if not args.xiaozhi_fonts_path:
-            args.xiaozhi_fonts_path = os.path.join(project_root, "components", "xiaozhi-fonts")
+        if not args.emoji_fonts_path:
+            args.emoji_fonts_path = find_default_emoji_fonts_path(project_root)
+            if not args.emoji_fonts_path:
+                print("Error: Could not locate the emoji/font component directory")
+                sys.exit(1)
     
     print("Building default assets...")
     print(f"  sdkconfig: {args.sdkconfig}")
@@ -874,13 +907,13 @@ def main():
         print(f"  multinet models: {', '.join(multinet_model_names)} (will be packaged)")
     
     # Get text font path if needed
-    text_font_path = get_text_font_path(args.builtin_text_font, args.xiaozhi_fonts_path)
+    text_font_path = get_text_font_path(args.builtin_text_font, args.emoji_fonts_path)
     
     # Get emoji collection path if needed
     # Calculate project root from script location for otto-gif support
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)
-    emoji_collection_path = get_emoji_collection_path(args.emoji_collection, args.xiaozhi_fonts_path, project_root)
+    emoji_collection_path = get_emoji_collection_path(args.emoji_collection, args.emoji_fonts_path, project_root)
     
     # Get extra files path if provided
     extra_files_path = args.extra_files
@@ -892,19 +925,25 @@ def main():
     if custom_wake_word_config and multinet_model_paths:
         # Determine language from multinet models
         language = get_language_from_multinet_models(multinet_model_names)
+        command_variants = split_and_trim(custom_wake_word_config['wake_word'])
+        phoneme_variants = split_and_trim(custom_wake_word_config.get('phonemes', ''))
+        commands = []
+        for i, command in enumerate(command_variants):
+            command_info = {
+                "command": command,
+                "text": custom_wake_word_config['display'],
+                "action": "wake"
+            }
+            if i < len(phoneme_variants):
+                command_info["phonemes"] = phoneme_variants[i]
+            commands.append(command_info)
         
         # Build multinet_model info structure
         multinet_model_info = {
             "language": language,
             "duration": 3000,  # Default duration in ms
             "threshold": custom_wake_word_config['threshold'],
-            "commands": [
-                {
-                    "command": custom_wake_word_config['wake_word'],
-                    "text": custom_wake_word_config['display'],
-                    "action": "wake"
-                }
-            ]
+            "commands": commands
         }
         print(f"  custom wake word: {custom_wake_word_config['wake_word']} ({custom_wake_word_config['display']})")
         print(f"  wake word language: {language}")
@@ -920,9 +959,20 @@ def main():
         print(f"Created empty assets.bin: {args.output}")
         return
     
+    skin_config = {
+        "light": {
+            "text_color": args.light_text_color,
+            "background_color": args.light_background_color,
+        },
+        "dark": {
+            "text_color": args.dark_text_color,
+            "background_color": args.dark_background_color,
+        },
+    }
+
     # Build the assets
     success = build_assets_integrated(wakenet_model_paths, multinet_model_paths, text_font_path, emoji_collection_path, 
-                                     extra_files_path, args.output, multinet_model_info)
+                                     extra_files_path, args.output, multinet_model_info, skin_config)
     
     if not success:
         sys.exit(1)

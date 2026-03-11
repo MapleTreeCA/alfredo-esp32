@@ -6,9 +6,9 @@
 #include "assets/lang_config.h"
 
 #include <esp_log.h>
-#include <esp_ota_ops.h>
 #include <esp_chip_info.h>
 #include <esp_random.h>
+#include <esp_app_desc.h>
 
 #define TAG "Board"
 
@@ -99,9 +99,6 @@ std::string Board::GetSystemInfoJson() {
                     "size": 0x100000
                 }
             ],
-            "ota": {
-                "label": "ota_0"
-            },
             "board": {
                 ...
             }
@@ -149,11 +146,6 @@ std::string Board::GetSystemInfoJson() {
     }
     json.pop_back(); // Remove the last comma
     json += R"(],)";
-
-    json += R"("ota":{)";
-    auto ota_partition = esp_ota_get_running_partition();
-    json += R"("label":")" + std::string(ota_partition->label) + R"(")";
-    json += R"(},)";
 
     // Append display info
     auto display = GetDisplay();
