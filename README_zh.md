@@ -26,8 +26,7 @@ Alfredo ESP32 是一个面向 `ESP32` 语音机器人的独立固件仓库，当
 
 ```bash
 cd <alfredo-esp32-repo>
-export IDF_PYTHON_ENV_PATH=<your-idf-python-env-path>
-source <your-esp-idf-path>/export.sh
+source scripts/export_idf_env.sh
 idf.py set-target esp32s3
 idf.py reconfigure
 python3 scripts/generate_alfred_emoji.py
@@ -46,6 +45,7 @@ python3 scripts/release.py m5stack-core-s3
 ### 3. 烧录
 
 ```bash
+source scripts/export_idf_env.sh
 idf.py -p /dev/cu.usbmodem1101 flash monitor
 ```
 
@@ -59,6 +59,7 @@ idf.py -p /dev/cu.usbmodem1101 flash monitor
 
 - [docs/alfredo-core-s3-gateway-progress.md](docs/alfredo-core-s3-gateway-progress.md)
 - [main/boards/m5stack-core-s3/README.md](main/boards/m5stack-core-s3/README.md)
+- [docs/build-assets-and-flash-manual.md](docs/build-assets-and-flash-manual.md)（assets 编译、固件编译烧录、当前配置说明）
 
 ## 表情与 Assets 流程
 

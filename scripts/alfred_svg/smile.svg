@@ -1,11 +1,8 @@
 <svg viewBox="0 0 128 128" aria-hidden="true">
-      <path d="M22 31c6-8 14-8 20 0" stroke="#111" stroke-width="4.5" fill="none" stroke-linecap="round"/>
-      <path d="M86 31c6-8 14-8 20 0" stroke="#111" stroke-width="4.5" fill="none" stroke-linecap="round"/>
-      <ellipse cx="32" cy="55" rx="10.5" ry="15" fill="#111"/><circle cx="35" cy="50" r="3.8" fill="#fff"/><circle cx="29" cy="58" r="1.9" fill="#fff"/>
-      <ellipse cx="96" cy="55" rx="10.5" ry="15" fill="#111"/><circle cx="99" cy="50" r="3.8" fill="#fff"/><circle cx="93" cy="58" r="1.9" fill="#fff"/>
-      <rect x="16" y="84" width="26" height="17" rx="8.5" fill="#f2a0a5"/>
-      <rect x="86" y="84" width="26" height="17" rx="8.5" fill="#f2a0a5"/>
-      <g class="mouth">
-        <path d="M47 86c7 12 27 12 34 0" stroke="#111" stroke-width="5" fill="none" stroke-linecap="round"/>
-      </g>
-    </svg>
+  <rect x="18" y="50" width="7" height="4" fill="#39ff14"/>
+  <rect x="98" y="50" width="7" height="4" fill="#39ff14"/>
+
+  <g class="mouth">
+    <path d="M48 88c7 9 25 9 32 0" stroke="#39ff14" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>

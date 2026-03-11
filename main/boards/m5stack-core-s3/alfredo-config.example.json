@@ -18,7 +18,7 @@
     "wake_word_detection_in_listening": false
   },
   "audio": {
-    "output_volume": 70,
+    "output_volume": 100,
     "input_gain": 36,
     "input_reference": false
   },
