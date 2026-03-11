@@ -2,6 +2,12 @@
 
 Language: **English** | [简体中文](README_zh.md)
 
+## Alfredo Series
+
+- Organization: <https://github.com/MapleTreeCA>
+- Firmware (`alfredo-esp32`): <https://github.com/MapleTreeCA/alfredo-esp32>
+- Gateway (`alfredo-codex-gateway`): <https://github.com/MapleTreeCA/alfredo-codex-gateway>
+
 Alfredo ESP32 is a standalone firmware repository for an `ESP32` voice robot, currently focused on `M5Stack CoreS3`.
 
 This repository already contains the full source tree, board configuration, build scripts, and Alfred face assets. It is no longer a patch-only overlay repository.
