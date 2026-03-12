@@ -9,10 +9,10 @@ enum DeviceState {
     kDeviceStateConnecting,
     kDeviceStateListening,
     kDeviceStateSpeaking,
-    kDeviceStateUpgrading,
+    kDeviceStateUpgrading,      // Reserved – Cloud OTA disabled; kept for enum stability
     kDeviceStateActivating,
     kDeviceStateAudioTesting,
-    kDeviceStateFatalError
+    kDeviceStateFatalError       // Reserved – never entered; kept as sentinel
 };
 
 #endif // _DEVICE_STATE_H_ 

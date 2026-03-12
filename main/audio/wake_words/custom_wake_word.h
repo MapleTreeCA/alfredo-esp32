@@ -48,7 +48,8 @@ private:
     char* mn_name_ = nullptr;
     std::string language_ = "cn";
     int duration_ = 3000;
-    float threshold_ = 0.2;
+    float threshold_ = 0.25;
+    float min_confidence_ = 0.4;
     std::deque<Command> commands_;
  
     std::function<void(const std::string& wake_word)> wake_word_detected_callback_;
@@ -64,6 +65,8 @@ private:
     bool afe_speech_active_ = false;
     int afe_speech_frames_ = 0;
     float afe_speech_peak_volume_db_ = -120.0f;
+    int64_t last_detection_time_us_ = 0;
+    static constexpr int64_t kDetectionCooldownUs = 2000 * 1000; // 2 seconds
 
     TaskHandle_t wake_word_encode_task_ = nullptr;
     StaticTask_t* wake_word_encode_task_buffer_ = nullptr;

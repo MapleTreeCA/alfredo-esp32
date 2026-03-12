@@ -16,6 +16,7 @@
 namespace {
 
 constexpr const char* TAG = "RuntimeConfig";
+constexpr bool kEnableSdCardRuntimeConfig = false;
 // Use 8.3 filename as primary path for FATFS compatibility on boards
 // where long filename (LFN) support is not enabled.
 constexpr const char* kRuntimeConfigPath = "/sdcard/alfredo.cfg";
@@ -117,6 +118,10 @@ bool ReadConfigTextFromPath(const char* path, std::string& out) {
 void RefreshRuntimeConfigCacheLocked() {
     g_runtime_config_cache = RuntimeConfigCache{};
     g_runtime_config_cache.initialized = true;
+    if (!kEnableSdCardRuntimeConfig) {
+        ESP_LOGI(TAG, "SD card runtime config is disabled; using compiled defaults only");
+        return;
+    }
 
     std::string content;
     if (ReadConfigTextFromPath(kRuntimeConfigPath, content)) {
@@ -162,6 +167,10 @@ std::unique_ptr<cJSON, decltype(&cJSON_Delete)> LoadRoot() {
 }
 
 }  // namespace
+
+bool RuntimeConfig::IsSdCardRuntimeConfigEnabled() {
+    return kEnableSdCardRuntimeConfig;
+}
 
 const char* RuntimeConfig::GetConfigPath() {
     return kRuntimeConfigPath;

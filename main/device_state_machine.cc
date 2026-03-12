@@ -58,23 +58,20 @@ bool DeviceStateMachine::IsValidTransition(DeviceState from, DeviceState to) con
             return to == kDeviceStateWifiConfiguring;
 
         case kDeviceStateActivating:
-            // Can go to upgrading, idle, or back to wifi configuring (on error)
-            return to == kDeviceStateUpgrading ||
-                   to == kDeviceStateIdle ||
+            // Can go to idle or back to wifi configuring (on error)
+            return to == kDeviceStateIdle ||
                    to == kDeviceStateWifiConfiguring;
 
         case kDeviceStateUpgrading:
-            // Can go to idle (upgrade failed) or activating
+            // Reserved – Cloud OTA disabled; allow recovery to idle or activating
             return to == kDeviceStateIdle ||
                    to == kDeviceStateActivating;
 
         case kDeviceStateIdle:
-            // Can go to connecting, listening (manual mode), speaking, activating, upgrading, or wifi configuring
             return to == kDeviceStateConnecting ||
                    to == kDeviceStateListening ||
                    to == kDeviceStateSpeaking ||
                    to == kDeviceStateActivating ||
-                   to == kDeviceStateUpgrading ||
                    to == kDeviceStateWifiConfiguring;
 
         case kDeviceStateConnecting:

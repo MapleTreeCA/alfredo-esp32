@@ -49,6 +49,7 @@ protected:
     void UpdateSleepOverlayLocked();
     void UpdateEmojiVisualLocked(const char* emotion);
     void UpdateSpeakingAnimation();
+    void AdjustEmojiBoxForSubtitleLocked(bool subtitle_visible);
     virtual bool Lock(int timeout_ms = 0) override;
     virtual void Unlock() override;
 

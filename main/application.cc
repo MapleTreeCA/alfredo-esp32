@@ -443,15 +443,14 @@ void Application::Run() {
             auto display = Board::GetInstance().GetDisplay();
             display->UpdateStatusBar();
 
-            // Self-heal stale websocket session: if device stays in an active
-            // conversation state while channel is timed out/disconnected,
-            // force close and return to idle so wake word can work again.
             if (protocol_ != nullptr) {
                 auto state = GetDeviceState();
                 bool active_conversation_state =
                     (state == kDeviceStateListening) || (state == kDeviceStateSpeaking);
-                if (active_conversation_state && !protocol_->IsAudioChannelOpened()) {
-                    ESP_LOGW(TAG, "Audio channel unhealthy in state=%d, reset to idle", (int)state);
+                bool stale_connecting =
+                    (state == kDeviceStateConnecting) && (clock_ticks_ > 15);
+                if ((active_conversation_state && !protocol_->IsAudioChannelOpened()) || stale_connecting) {
+                    ESP_LOGW(TAG, "State %d unhealthy (ticks=%d), reset to idle", (int)state, clock_ticks_);
                     protocol_->CloseAudioChannel();
                     SetDeviceState(kDeviceStateIdle);
                 }
@@ -963,6 +962,13 @@ void Application::HandleIncomingSystemMessage(const cJSON* root) {
 }
 
 void Application::HandleWriteSdCardRuntimeConfig(const std::string& config_json, bool reboot_after_write) {
+    if (!RuntimeConfig::IsSdCardRuntimeConfigEnabled()) {
+        ESP_LOGW(TAG, "SD card runtime config is disabled in firmware; ignoring write request");
+        auto display = Board::GetInstance().GetDisplay();
+        display->ShowNotification("SD config disabled");
+        return;
+    }
+
     const char* path = RuntimeConfig::GetConfigPath();
     const char* mount_point = "/sdcard";
 

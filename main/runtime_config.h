@@ -97,6 +97,7 @@ struct RuntimeHeadGimbalConfig {
 
 class RuntimeConfig {
 public:
+    static bool IsSdCardRuntimeConfigEnabled();
     static const char* GetConfigPath();
     static void InvalidateCache();
     static bool LoadWebsocketConfig(RuntimeWebsocketConfig& out);

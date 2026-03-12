@@ -20,7 +20,7 @@
 #define TAG "LcdDisplay"
 
 namespace {
-constexpr int kEmojiFillPercent = 90;
+constexpr int kEmojiFillPercent = 80;
 constexpr uint64_t kSpeakingAnimationIntervalUs = 220 * 1000;
 constexpr const char* kSpeakingEmotionSuffix = "_speaking";
 constexpr const char* kSleepOverlayText = "zZz";
@@ -418,6 +418,24 @@ void LcdDisplay::UpdateSleepOverlayLocked() {
     } else {
         lv_obj_add_flag(sleep_zzz_label_, LV_OBJ_FLAG_HIDDEN);
     }
+}
+
+void LcdDisplay::AdjustEmojiBoxForSubtitleLocked(bool subtitle_visible) {
+#if !CONFIG_USE_WECHAT_MESSAGE_STYLE
+    if (emoji_box_ == nullptr || bottom_bar_ == nullptr) {
+        return;
+    }
+    if (subtitle_visible) {
+        lv_coord_t bar_h = lv_obj_get_height(bottom_bar_);
+        lv_obj_set_size(emoji_box_, LV_HOR_RES, LV_VER_RES - bar_h);
+        lv_obj_align(emoji_box_, LV_ALIGN_TOP_MID, 0, 0);
+    } else {
+        lv_obj_set_size(emoji_box_, LV_HOR_RES, LV_VER_RES);
+        lv_obj_align(emoji_box_, LV_ALIGN_CENTER, 0, 0);
+    }
+    lv_obj_center(emoji_label_);
+    lv_obj_center(emoji_image_);
+#endif
 }
 
 void LcdDisplay::UpdateEmojiVisualLocked(const char* emotion) {
@@ -1084,7 +1102,7 @@ void LcdDisplay::SetupUI() {
     lv_obj_set_height(bottom_bar_, LV_SIZE_CONTENT);
     lv_obj_set_style_radius(bottom_bar_, 0, 0);
     lv_obj_set_style_bg_color(bottom_bar_, lvgl_theme->background_color(), 0);
-    lv_obj_set_style_bg_opa(bottom_bar_, LV_OPA_50, 0);
+    lv_obj_set_style_bg_opa(bottom_bar_, LV_OPA_COVER, 0);
     lv_obj_set_style_text_color(bottom_bar_, lvgl_theme->text_color(), 0);
     lv_obj_set_style_pad_all(bottom_bar_, lvgl_theme->spacing(4), 0);
     lv_obj_set_style_border_width(bottom_bar_, 0, 0);
@@ -1201,17 +1219,16 @@ void LcdDisplay::SetChatMessage(const char* role, const char* content) {
         return;
     }
     lv_label_set_text(chat_message_label_, content);
-    // Show bottom_bar_ only when there is content (and subtitle is not globally hidden)
+    bool has_content = content != nullptr && content[0] != '\0';
     if (bottom_bar_ != nullptr) {
-        if (content == nullptr || content[0] == '\0') {
+        if (!has_content) {
             lv_obj_add_flag(bottom_bar_, LV_OBJ_FLAG_HIDDEN);
         } else if (!hide_subtitle_) {
             lv_obj_remove_flag(bottom_bar_, LV_OBJ_FLAG_HIDDEN);
         }
     }
+    AdjustEmojiBoxForSubtitleLocked(has_content && !hide_subtitle_);
 #if CONFIG_USE_MULTILINE_CHAT_MESSAGE
-    // Re-align bottom_bar_ after text change so it stays anchored to the bottom
-    // as its height adapts to the wrapped content.
     if (bottom_bar_ != nullptr) {
         lv_obj_align(bottom_bar_, LV_ALIGN_BOTTOM_MID, 0, 0);
     }
@@ -1220,13 +1237,13 @@ void LcdDisplay::SetChatMessage(const char* role, const char* content) {
 
 void LcdDisplay::ClearChatMessages() {
     DisplayLockGuard lock(this);
-    // In non-wechat mode, just clear the chat message label and hide the bar
     if (chat_message_label_ != nullptr) {
         lv_label_set_text(chat_message_label_, "");
     }
     if (bottom_bar_ != nullptr) {
         lv_obj_add_flag(bottom_bar_, LV_OBJ_FLAG_HIDDEN);
     }
+    AdjustEmojiBoxForSubtitleLocked(false);
 }
 #endif
 

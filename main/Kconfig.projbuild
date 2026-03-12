@@ -351,7 +351,19 @@ config CUSTOM_WAKE_WORD_THRESHOLD
     range 1 99
     depends on USE_CUSTOM_WAKE_WORD
     help
-        Custom Wake Word Threshold, range 1-99, the smaller the more sensitive, default 20
+        Multinet internal detection sensitivity, range 1-99, smaller = more sensitive.
+        This controls whether the model fires ESP_MN_STATE_DETECTED at all.
+        Default 20. Lower values wake more easily, higher values reduce false positives.
+
+config CUSTOM_WAKE_WORD_MIN_CONFIDENCE
+    int "Custom Wake Word Minimum Confidence (%)"
+    default 30
+    range 10 99
+    depends on USE_CUSTOM_WAKE_WORD
+    help
+        Minimum detection probability (prob) to accept a wake word hit, range 10-99.
+        Applied after the model already passed the threshold check.
+        Default 30. Raise to reduce false positives, lower if wake word is hard to trigger.
 
 config SEND_WAKE_WORD_DATA
     bool "Send Wake Word Data"
