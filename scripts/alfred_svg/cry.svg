@@ -1,0 +1,17 @@
+<svg viewBox="0 0 128 128" aria-hidden="true">
+  <g class="eyes">
+    <path d="M 14 52 Q 24 45 34 52" fill="none" stroke="#39ff14" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 94 52 Q 104 45 114 52" fill="none" stroke="#39ff14" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  
+  <g class="tears">
+    <path d="M 24 60 L 24 75" fill="none" stroke="#39ff14" stroke-width="3" stroke-linecap="round" stroke-dasharray="4,4" />
+    <path d="M 104 60 L 104 75" fill="none" stroke="#39ff14" stroke-width="3" stroke-linecap="round" stroke-dasharray="4,4" />
+    <circle cx="24" cy="85" r="2" fill="#39ff14" />
+    <circle cx="104" cy="85" r="2" fill="#39ff14" />
+  </g>
+
+  <g class="mouth">
+    <path d="M 54 96 Q 64 88 74 96" fill="none" stroke="#39ff14" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>

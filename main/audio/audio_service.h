@@ -188,6 +188,7 @@ private:
     bool audio_input_need_warmup_ = false;
     std::atomic<int64_t> vad_speech_started_at_us_{0};
     std::atomic<int64_t> last_vad_speech_at_us_{0};
+    std::atomic<uint16_t> force_speech_streak_{0};
     std::atomic<bool> mic_send_gate_enabled_{true};
     uint32_t dropped_silence_frames_ = 0;
 

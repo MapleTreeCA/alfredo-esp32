@@ -1,7 +1,10 @@
 <svg viewBox="0 0 128 128" aria-hidden="true">
-  <rect x="18" y="50" width="7" height="4" fill="#39ff14"/>
-  <rect x="98" y="50" width="7" height="4" fill="#39ff14"/>
-
+  <g class="eyes">
+    <rect x="18" y="50" width="7" height="4" fill="#39ff14"/>
+    <rect x="98" y="50" width="7" height="4" fill="#39ff14"/>
+    <path d="M 12 40 L 32 46" stroke="#39ff14" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 116 40 L 96 46" stroke="#39ff14" stroke-width="3" stroke-linecap="round"/>
+  </g>
   <g class="mouth">
     <path d="M50 87h28c2 0 4 2 4 2v4c0 3-4 6-9 6H55c-5 0-9-3-9-6v-4c0-1 2-2 4-2z" fill="#39ff14"/>
     <path d="M56 92h16" stroke="#39ff14" stroke-width="1.6" stroke-linecap="round"/>

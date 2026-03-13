@@ -1,0 +1,20 @@
+<svg viewBox="0 0 128 128" aria-hidden="true">
+  <g class="eyes">
+    <circle cx="28" cy="46" r="4" fill="#39ff14"/>
+    <circle cx="108" cy="46" r="4" fill="#39ff14"/>
+  </g>
+
+  <g class="mouth">
+    <path d="M 54 90 L 74 90" fill="none" stroke="#39ff14" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <g class="wifi-disconnected" stroke="#39ff14" stroke-width="3" stroke-linecap="round" fill="none">
+    <!-- Wi-Fi arcs -->
+    <path d="M 44 22 A 28 28 0 0 1 84 22" />
+    <path d="M 52 32 A 16 16 0 0 1 76 32" />
+    <circle cx="64" cy="42" r="2.5" fill="#39ff14" stroke="none"/>
+    
+    <!-- Diagonal slash -->
+    <line x1="40" y1="14" x2="88" y2="48" stroke-width="2.5"/>
+  </g>
+</svg>

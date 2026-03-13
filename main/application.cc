@@ -936,6 +936,34 @@ void Application::HandleIncomingSystemMessage(const cJSON* root) {
         return;
     }
 
+    if (strcmp(command->valuestring, "standby") == 0) {
+        Schedule([this]() {
+            ESP_LOGI(TAG, "Entering standby by system command");
+
+            CancelPendingListeningResume();
+            CloseTtsDownlinkWindow();
+            audio_service_.ResetDecoder();
+
+            auto state = GetDeviceState();
+            if (state == kDeviceStateSpeaking) {
+                AbortSpeaking(kAbortReasonNone);
+            }
+
+            if (protocol_ && protocol_->IsAudioChannelOpened()) {
+                protocol_->CloseAudioChannel();
+            }
+
+            if (GetDeviceState() != kDeviceStateIdle) {
+                if (!SetDeviceState(kDeviceStateIdle)) {
+                    ESP_LOGW(TAG, "Failed to switch to idle for standby");
+                }
+            } else {
+                DismissAlert();
+            }
+        });
+        return;
+    }
+
     if (strcmp(command->valuestring, "write_sdcard_runtime_config") == 0) {
         auto config = cJSON_GetObjectItem(root, "config");
         if (!cJSON_IsObject(config)) {

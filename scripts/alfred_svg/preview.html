@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alfred SVG Expressions</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            padding: 20px;
+            justify-content: center;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #000000;
+            border-radius: 12px;
+            padding: 10px;
+            width: 340px; /* 320 + padding */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            border: 1px solid #333;
+        }
+        .svg-preview {
+            width: 320px;
+            height: 240px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #000000;
+        }
+        .svg-preview svg {
+            width: 320px;
+            height: 240px;
+        }
+        p {
+            margin: 10px 0 0 0;
+            font-size: 14px;
+            text-transform: capitalize;
+            color: #39ff14;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="svg-preview">
+<svg viewBox="0 0 128 128" aria-hidden="true">
+  <g class="eyes">
+    <rect x="18" y="50" width="7" height="4" fill="#39ff14"/>
+    <rect x="98" y="50" width="7" height="4" fill="#39ff14"/>
+    <path d="M 12 40 L 32 46" stroke="#39ff14" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 116 40 L 96 46" stroke="#39ff14" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <g class="mouth">
+    <path d="M50 87h28c2 0 4 2 4 2v4c0 3-4 6-9 6H55c-5 0-9-3-9-6v-4c0-1 2-2 4-2z" fill="#39ff14"/>
+    <path d="M56 92h16" stroke="#39ff14" stroke-width="1.6" stroke-linecap="round"/>
+  </g>
+</svg>
+
+        </div>
+        <p>angry</p>
+    </div>
+    <div class="container">
+        <div class="svg-preview">
+<svg viewBox="0 0 128 128" aria-hidden="true">
+  <rect x="18" y="50" width="7" height="4" fill="#39ff14"/>
+  <rect x="98" y="50" width="7" height="4" fill="#39ff14"/>
+
+  <g class="mouth">
+    <path d="M49 90c5 6 25 6 30 0" stroke="#39ff14" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>
+
+        </div>
+        <p>calm</p>
+    </div>
+    <div class="container">
+        <div class="svg-preview">
+<svg viewBox="0 0 128 128" aria-hidden="true">
+  <g class="eyes">
+    <path d="M 14 52 Q 24 45 34 52" fill="none" stroke="#39ff14" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 94 52 Q 104 45 114 52" fill="none" stroke="#39ff14" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  
+  <g class="tears">
+    <path d="M 24 60 L 24 75" fill="none" stroke="#39ff14" stroke-width="3" stroke-linecap="round" stroke-dasharray="4,4" />
+    <path d="M 104 60 L 104 75" fill="none" stroke="#39ff14" stroke-width="3" stroke-linecap="round" stroke-dasharray="4,4" />
+    <circle cx="24" cy="85" r="2" fill="#39ff14" />
+    <circle cx="104" cy="85" r="2" fill="#39ff14" />
+  </g>
+
+  <g class="mouth">
+    <path d="M 54 96 Q 64 88 74 96" fill="none" stroke="#39ff14" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>
+
+        </div>
+        <p>cry</p>
+    </div>
+    <div class="container">
+        <div class="svg-preview">
+<svg viewBox="0 0 128 128" aria-hidden="true">
+  <g class="eyes">
+    <ellipse cx="24" cy="50" rx="10" ry="12" fill="none" stroke="#39ff14" stroke-width="3" />
+    <ellipse cx="104" cy="50" rx="10" ry="12" fill="none" stroke="#39ff14" stroke-width="3" />
+    <path d="M 14 36 Q 24 32 34 38" fill="none" stroke="#39ff14" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 114 36 Q 104 32 94 38" fill="none" stroke="#39ff14" stroke-width="3" stroke-linecap="round"/>
+    
+    <circle cx="26" cy="46" r="3" fill="#39ff14" />
+    <circle cx="102" cy="46" r="3" fill="#39ff14" />
+  </g>
+
+  <g class="mouth">
+    <path d="M 52 94 Q 60 90 64 94 T 76 94" fill="none" stroke="#39ff14" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>
+
+        </div>
+        <p>grieved</p>
+    </div>
+    <div class="container">
+        <div class="svg-preview">
+<svg viewBox="0 0 128 128" aria-hidden="true">
+  <rect x="18" y="50" width="7" height="4" fill="#39ff14"/>
+  <rect x="98" y="50" width="7" height="4" fill="#39ff14"/>
+
+  <g class="mouth">
+    <path d="M50 87h28c2 0 4 2 4 2v4c0 3-4 6-9 6H55c-5 0-9-3-9-6v-4c0-1 2-2 4-2z" fill="#39ff14"/>
+    <path d="M57 96h14c-2 2-4 3-7 3s-5-1-7-3z" fill="#39ff14"/>
+  </g>
+</svg>
+
+        </div>
+        <p>laugh</p>
+    </div>
+    <div class="container">
+        <div class="svg-preview">
+<svg viewBox="0 0 128 128" aria-hidden="true">
+  <g class="eyes">
+    <circle cx="28" cy="48" r="6" fill="#39ff14"/>
+    <circle cx="100" cy="48" r="6" fill="#39ff14"/>
+  </g>
+
+  <g class="waveform" stroke="#39ff14" stroke-width="4" stroke-linecap="round">
+    <line x1="44" y1="92" x2="44" y2="92" />
+    <line x1="52" y1="88" x2="52" y2="96" />
+    <line x1="60" y1="80" x2="60" y2="104" />
+    <line x1="68" y1="84" x2="68" y2="100" />
+    <line x1="76" y1="88" x2="76" y2="96" />
+    <line x1="84" y1="92" x2="84" y2="92" />
+  </g>
+</svg>
+
+        </div>
+        <p>listening</p>
+    </div>
+    <div class="container">
+        <div class="svg-preview">
+<svg viewBox="0 0 128 128" aria-hidden="true">
+  <g class="eyes">
+    <path d="M 14 52 Q 21.5 58 29 52" fill="none" stroke="#39ff14" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 94 52 Q 101.5 58 109 52" fill="none" stroke="#39ff14" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <g class="blush" stroke="#39ff14" stroke-width="1.5" stroke-linecap="round">
+    <line x1="14" y1="64" x2="19" y2="59" />
+    <line x1="19" y1="64" x2="24" y2="59" />
+    <line x1="24" y1="64" x2="29" y2="59" />
+    
+    <line x1="94" y1="64" x2="99" y2="59" />
+    <line x1="99" y1="64" x2="104" y2="59" />
+    <line x1="104" y1="64" x2="109" y2="59" />
+  </g>
+
+  <g class="mouth">
+    <path d="M 54 94 Q 59 90 64 94 T 74 94" fill="none" stroke="#39ff14" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>
+
+        </div>
+        <p>shy</p>
+    </div>
+    <div class="container">
+        <div class="svg-preview">
+<svg viewBox="0 0 128 128" aria-hidden="true">
+  <rect x="16" y="52" width="14" height="2" rx="1" fill="#39ff14"/>
+  <rect x="98" y="52" width="14" height="2" rx="1" fill="#39ff14"/>
+
+  <g class="mouth">
+    <path d="M 49 96 L 79 96" stroke="#39ff14" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <g stroke="#39ff14" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M 102 12 L 110 12 L 102 22 L 110 22" stroke-width="2"/>
+    <path d="M 93 24 L 99 24 L 93 32 L 99 32" stroke-width="2"/>
+    <path d="M 85 34 L 90 34 L 85 40 L 90 40" stroke-width="1.6"/>
+  </g>
+</svg>
+        </div>
+        <p>sleeping</p>
+    </div>
+    <div class="container">
+        <div class="svg-preview">
+<svg viewBox="0 0 128 128" aria-hidden="true">
+  <rect x="18" y="51" width="10" height="3" rx="1" fill="#39ff14"/>
+  <rect x="100" y="51" width="10" height="3" rx="1" fill="#39ff14"/>
+
+  <g class="mouth">
+    <path d="M 49 96 L 79 96" stroke="#39ff14" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>
+
+        </div>
+        <p>sleepy</p>
+    </div>
+    <div class="container">
+        <div class="svg-preview">
+<svg viewBox="0 0 128 128" aria-hidden="true">
+  <rect x="18" y="50" width="7" height="4" fill="#39ff14"/>
+  <rect x="98" y="50" width="7" height="4" fill="#39ff14"/>
+
+  <g class="mouth">
+    <path d="M48 88c7 9 25 9 32 0" stroke="#39ff14" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>
+
+        </div>
+        <p>smile</p>
+    </div>
+    <div class="container">
+        <div class="svg-preview">
+<svg viewBox="0 0 128 128" aria-hidden="true">
+  <g class="eyes">
+    <ellipse cx="21" cy="52" rx="5" ry="8" fill="none" stroke="#39ff14" stroke-width="3"/>
+    <ellipse cx="101" cy="52" rx="5" ry="8" fill="none" stroke="#39ff14" stroke-width="3"/>
+  </g>
+
+  <g class="mouth">
+    <ellipse cx="64" cy="93" rx="8" ry="12" fill="none" stroke="#39ff14" stroke-width="3"/>
+  </g>
+</svg>
+
+        </div>
+        <p>surprised</p>
+    </div>
+    <div class="container">
+        <div class="svg-preview">
+<svg viewBox="0 0 128 128" aria-hidden="true">
+  <rect x="18" y="50" width="7" height="4" fill="#39ff14"/>
+  <rect x="98" y="50" width="7" height="4" fill="#39ff14"/>
+
+  <g class="mouth">
+    <path d="M52 86h24c2 0 4 2 4 2v4c0 3-4 6-9 6H57c-5 0-9-3-9-6v-4c0-1 2-2 4-2z" fill="#39ff14"/>
+    <path d="M57 96h14c-2 2-4 3-7 3s-5-1-7-3z" fill="#39ff14"/>
+  </g>
+</svg>
+
+        </div>
+        <p>talk</p>
+    </div>
+    <div class="container">
+        <div class="svg-preview">
+<svg viewBox="0 0 128 128" aria-hidden="true">
+  <g class="eyes">
+    <rect x="18" y="50" width="7" height="4" fill="#39ff14"/>
+    <rect x="98" y="50" width="7" height="4" fill="#39ff14"/>
+  </g>
+
+  <g class="mouth">
+    <circle cx="54" cy="94" r="3" fill="#39ff14"/>
+    <circle cx="64" cy="94" r="3" fill="#39ff14"/>
+    <circle cx="74" cy="94" r="3" fill="#39ff14"/>
+  </g>
+</svg>
+
+        </div>
+        <p>thinking</p>
+    </div>
+    <div class="container">
+        <div class="svg-preview">
+<svg viewBox="0 0 128 128" aria-hidden="true">
+  <rect x="18" y="50" width="7" height="4" fill="#39ff14"/>
+  <polyline points="105,48 98,52 105,56" stroke="#39ff14" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <g class="mouth">
+    <path d="M50 89c6 8 20 9 28 2" stroke="#39ff14" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>
+
+        </div>
+        <p>wink</p>
+    </div>
+    <div class="container">
+        <div class="svg-preview">
+<svg viewBox="0 0 128 128" aria-hidden="true">
+  <rect x="18" y="50" width="7" height="4" fill="#39ff14"/>
+  <rect x="98" y="50" width="7" height="4" fill="#39ff14"/>
+
+  <g class="mouth">
+    <path d="M49 96c5-8 25-8 30 0" stroke="#39ff14" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>
+
+        </div>
+        <p>worried</p>
+    </div>
+
+</body>
+</html>

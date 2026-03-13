@@ -1,8 +1,10 @@
 <svg viewBox="0 0 128 128" aria-hidden="true">
-  <rect x="18" y="50" width="7" height="4" fill="#39ff14"/>
-  <rect x="98" y="50" width="7" height="4" fill="#39ff14"/>
+  <g class="eyes">
+    <ellipse cx="21" cy="52" rx="5" ry="8" fill="none" stroke="#39ff14" stroke-width="3"/>
+    <ellipse cx="101" cy="52" rx="5" ry="8" fill="none" stroke="#39ff14" stroke-width="3"/>
+  </g>
 
   <g class="mouth">
-    <rect x="53" y="91" width="22" height="4" rx="2" fill="#39ff14"/>
+    <ellipse cx="64" cy="93" rx="8" ry="12" fill="none" stroke="#39ff14" stroke-width="3"/>
   </g>
 </svg>

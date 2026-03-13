@@ -422,19 +422,9 @@ void LcdDisplay::UpdateSleepOverlayLocked() {
 
 void LcdDisplay::AdjustEmojiBoxForSubtitleLocked(bool subtitle_visible) {
 #if !CONFIG_USE_WECHAT_MESSAGE_STYLE
-    if (emoji_box_ == nullptr || bottom_bar_ == nullptr) {
-        return;
-    }
-    if (subtitle_visible) {
-        lv_coord_t bar_h = lv_obj_get_height(bottom_bar_);
-        lv_obj_set_size(emoji_box_, LV_HOR_RES, LV_VER_RES - bar_h);
-        lv_obj_align(emoji_box_, LV_ALIGN_TOP_MID, 0, 0);
-    } else {
-        lv_obj_set_size(emoji_box_, LV_HOR_RES, LV_VER_RES);
-        lv_obj_align(emoji_box_, LV_ALIGN_CENTER, 0, 0);
-    }
-    lv_obj_center(emoji_label_);
-    lv_obj_center(emoji_image_);
+    (void)subtitle_visible;
+    // Keep emoji/background full-screen. Subtitle should be a floating overlay,
+    // not a layout participant that shrinks the emoji layer.
 #endif
 }
 
@@ -1095,35 +1085,11 @@ void LcdDisplay::SetupUI() {
     lv_label_set_text(status_label_, Lang::Strings::INITIALIZING);
     lv_obj_align(status_label_, LV_ALIGN_CENTER, 0, 0);
 
-#if CONFIG_USE_MULTILINE_CHAT_MESSAGE
-    /* Bottom bar - auto height, grows upward with wrapped text */
-    bottom_bar_ = lv_obj_create(screen);
-    lv_obj_set_width(bottom_bar_, LV_HOR_RES);
-    lv_obj_set_height(bottom_bar_, LV_SIZE_CONTENT);
-    lv_obj_set_style_radius(bottom_bar_, 0, 0);
-    lv_obj_set_style_bg_color(bottom_bar_, lvgl_theme->background_color(), 0);
-    lv_obj_set_style_bg_opa(bottom_bar_, LV_OPA_COVER, 0);
-    lv_obj_set_style_text_color(bottom_bar_, lvgl_theme->text_color(), 0);
-    lv_obj_set_style_pad_all(bottom_bar_, lvgl_theme->spacing(4), 0);
-    lv_obj_set_style_border_width(bottom_bar_, 0, 0);
-    lv_obj_set_scrollbar_mode(bottom_bar_, LV_SCROLLBAR_MODE_OFF);
-    lv_obj_align(bottom_bar_, LV_ALIGN_BOTTOM_MID, 0, 0);
-
-    /* chat_message_label_ placed in bottom_bar_, multiline wrapped display */
-    chat_message_label_ = lv_label_create(bottom_bar_);
-    lv_label_set_text(chat_message_label_, "");
-    lv_obj_set_width(chat_message_label_, LV_HOR_RES - lvgl_theme->spacing(8));
-    lv_label_set_long_mode(chat_message_label_, LV_LABEL_LONG_WRAP);
-    lv_obj_set_style_text_align(chat_message_label_, LV_TEXT_ALIGN_CENTER, 0);
-    lv_obj_set_style_text_color(chat_message_label_, lvgl_theme->text_color(), 0);
-    lv_obj_align(chat_message_label_, LV_ALIGN_CENTER, 0, 0);
-    lv_obj_add_flag(bottom_bar_, LV_OBJ_FLAG_HIDDEN);  // Hide until there is content
-#else
-    /* Top layer: Bottom bar - fixed height at bottom */
+    /* Top layer: floating subtitle overlay at bottom (transparent). */
     bottom_bar_ = lv_obj_create(screen);
     lv_obj_set_size(bottom_bar_, LV_HOR_RES, text_font->line_height + lvgl_theme->spacing(8));
     lv_obj_set_style_radius(bottom_bar_, 0, 0);
-    lv_obj_set_style_bg_color(bottom_bar_, lvgl_theme->background_color(), 0);
+    lv_obj_set_style_bg_opa(bottom_bar_, LV_OPA_TRANSP, 0);
     lv_obj_set_style_text_color(bottom_bar_, lvgl_theme->text_color(), 0);
     lv_obj_set_style_pad_all(bottom_bar_, 0, 0);
     lv_obj_set_style_pad_left(bottom_bar_, lvgl_theme->spacing(4), 0);
@@ -1132,7 +1098,7 @@ void LcdDisplay::SetupUI() {
     lv_obj_set_scrollbar_mode(bottom_bar_, LV_SCROLLBAR_MODE_OFF);
     lv_obj_align(bottom_bar_, LV_ALIGN_BOTTOM_MID, 0, 0);
 
-    /* chat_message_label_ placed in bottom_bar_, single-line horizontal scroll */
+    /* Single-line subtitle with horizontal circular scrolling. */
     chat_message_label_ = lv_label_create(bottom_bar_);
     lv_label_set_text(chat_message_label_, "");
     lv_obj_set_width(chat_message_label_, LV_HOR_RES - lvgl_theme->spacing(8));
@@ -1149,7 +1115,6 @@ void LcdDisplay::SetupUI() {
     lv_obj_set_style_anim(chat_message_label_, &a, LV_PART_MAIN);
     lv_obj_set_style_anim_duration(chat_message_label_, lv_anim_speed_clamped(60, 300, 60000), LV_PART_MAIN);
     lv_obj_add_flag(bottom_bar_, LV_OBJ_FLAG_HIDDEN);  // Hide until there is content
-#endif
 
     low_battery_popup_ = lv_obj_create(screen);
     lv_obj_set_scrollbar_mode(low_battery_popup_, LV_SCROLLBAR_MODE_OFF);
@@ -1228,11 +1193,6 @@ void LcdDisplay::SetChatMessage(const char* role, const char* content) {
         }
     }
     AdjustEmojiBoxForSubtitleLocked(has_content && !hide_subtitle_);
-#if CONFIG_USE_MULTILINE_CHAT_MESSAGE
-    if (bottom_bar_ != nullptr) {
-        lv_obj_align(bottom_bar_, LV_ALIGN_BOTTOM_MID, 0, 0);
-    }
-#endif
 }
 
 void LcdDisplay::ClearChatMessages() {
@@ -1440,10 +1400,9 @@ void LcdDisplay::SetTheme(Theme* theme) {
         lv_obj_set_style_text_color(emoji_label_, lvgl_theme->text_color(), 0);
     }
     
-    // Update bottom bar background color with 50% opacity
+    // Keep subtitle overlay transparent so it floats above emoji/background.
     if (bottom_bar_ != nullptr) {
-        lv_obj_set_style_bg_opa(bottom_bar_, LV_OPA_50, 0);
-        lv_obj_set_style_bg_color(bottom_bar_, lvgl_theme->background_color(), 0);
+        lv_obj_set_style_bg_opa(bottom_bar_, LV_OPA_TRANSP, 0);
     }
 #endif
     

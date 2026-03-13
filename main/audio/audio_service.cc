@@ -40,10 +40,13 @@
 namespace {
 constexpr int64_t kMicSendGateHangoverUs = 320 * 1000;
 constexpr int64_t kMicSendGateVadWarmupUs = 180 * 1000;
-constexpr int kMicSendGateVadPeak = 260;
-constexpr int kMicSendGateVadAvg = 55;
-constexpr int kMicSendGateForcePeak = 520;
-constexpr int kMicSendGateForceAvg = 110;
+constexpr int kMicSendGateVadPeak = 320;
+constexpr int kMicSendGateVadAvg = 75;
+constexpr int kMicSendGateForcePeak = 1400;
+constexpr int kMicSendGateForceAvg = 260;
+constexpr uint16_t kMicSendGateForceStreakMin = 3;
+constexpr int kMicSendGateClipPeak = 30000;
+constexpr int kMicSendGateClipAvg = 9000;
 constexpr uint32_t kMicSendGateDropLogEvery = 50;
 
 void ComputePcmEnergy(const std::vector<int16_t>& pcm, int& peak, int& avg) {
@@ -133,8 +136,10 @@ void AudioService::Initialize(AudioCodec* codec) {
             vad_speech_started_at_us_.store(now_us, std::memory_order_relaxed);
             last_vad_speech_at_us_.store(now_us, std::memory_order_relaxed);
             dropped_silence_frames_ = 0;
+            force_speech_streak_.store(0, std::memory_order_relaxed);
         } else {
             vad_speech_started_at_us_.store(0, std::memory_order_relaxed);
+            force_speech_streak_.store(0, std::memory_order_relaxed);
         }
         if (callbacks_.on_vad_change) {
             callbacks_.on_vad_change(speaking);
@@ -618,6 +623,7 @@ void AudioService::ResetUplinkStateForNewTurn() {
     voice_detected_ = false;
     vad_speech_started_at_us_.store(0, std::memory_order_relaxed);
     last_vad_speech_at_us_.store(0, std::memory_order_relaxed);
+    force_speech_streak_.store(0, std::memory_order_relaxed);
     dropped_silence_frames_ = 0;
     audio_queue_cv_.notify_all();
 }
@@ -834,19 +840,46 @@ bool AudioService::ShouldForwardProcessedFrame(const std::vector<int16_t>& pcm) 
         if (vad_stable && (peak >= kMicSendGateVadPeak || avg >= kMicSendGateVadAvg)) {
             last_vad_speech_at_us_.store(now_us, std::memory_order_relaxed);
             dropped_silence_frames_ = 0;
+            force_speech_streak_.store(0, std::memory_order_relaxed);
             return true;
         }
     }
 
     const int64_t last_speech_us = last_vad_speech_at_us_.load(std::memory_order_relaxed);
     if (last_speech_us > 0 && now_us - last_speech_us <= kMicSendGateHangoverUs) {
+        force_speech_streak_.store(0, std::memory_order_relaxed);
         return true;
     }
 
+    if (peak >= kMicSendGateClipPeak && avg >= kMicSendGateClipAvg) {
+        force_speech_streak_.store(0, std::memory_order_relaxed);
+        dropped_silence_frames_++;
+        if ((dropped_silence_frames_ % kMicSendGateDropLogEvery) == 0) {
+            ESP_LOGD(
+                TAG,
+                "Mic send gate dropped clipped noise frames=%u peak=%d avg=%d",
+                dropped_silence_frames_,
+                peak,
+                avg
+            );
+        }
+        return false;
+    }
+
     if (peak >= kMicSendGateForcePeak || avg >= kMicSendGateForceAvg) {
-        last_vad_speech_at_us_.store(now_us, std::memory_order_relaxed);
-        dropped_silence_frames_ = 0;
-        return true;
+        uint16_t streak = force_speech_streak_.load(std::memory_order_relaxed);
+        if (streak < UINT16_MAX) {
+            streak++;
+        }
+        force_speech_streak_.store(streak, std::memory_order_relaxed);
+        if (streak >= kMicSendGateForceStreakMin) {
+            last_vad_speech_at_us_.store(now_us, std::memory_order_relaxed);
+            dropped_silence_frames_ = 0;
+            force_speech_streak_.store(0, std::memory_order_relaxed);
+            return true;
+        }
+    } else {
+        force_speech_streak_.store(0, std::memory_order_relaxed);
     }
 
     dropped_silence_frames_++;

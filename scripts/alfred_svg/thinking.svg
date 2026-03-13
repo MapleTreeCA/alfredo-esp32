@@ -1,0 +1,12 @@
+<svg viewBox="0 0 128 128" aria-hidden="true">
+  <g class="eyes">
+    <rect x="18" y="50" width="7" height="4" fill="#39ff14"/>
+    <rect x="98" y="50" width="7" height="4" fill="#39ff14"/>
+  </g>
+
+  <g class="mouth">
+    <circle cx="54" cy="94" r="3" fill="#39ff14"/>
+    <circle cx="64" cy="94" r="3" fill="#39ff14"/>
+    <circle cx="74" cy="94" r="3" fill="#39ff14"/>
+  </g>
+</svg>

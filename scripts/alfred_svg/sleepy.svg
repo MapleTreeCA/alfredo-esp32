@@ -3,6 +3,6 @@
   <rect x="100" y="51" width="10" height="3" rx="1" fill="#39ff14"/>
 
   <g class="mouth">
-    <path d="M49 96c5-8 25-8 30 0" stroke="#39ff14" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M 49 96 L 79 96" stroke="#39ff14" stroke-width="3" fill="none" stroke-linecap="round"/>
   </g>
 </svg>
