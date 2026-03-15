@@ -30,9 +30,12 @@
 
 ### 1.3 唤醒词（英文）
 - `CONFIG_USE_CUSTOM_WAKE_WORD=y`
-- `CONFIG_CUSTOM_WAKE_WORD="alfredo;hey alfredo;hello alfredo"`
+- `CONFIG_CUSTOM_WAKE_WORD="hi alfredo;hey alfredo"`
 - `CONFIG_CUSTOM_WAKE_WORD_DISPLAY="Alfredo"`
-- `CONFIG_CUSTOM_WAKE_WORD_THRESHOLD=20`
+- `CONFIG_CUSTOM_WAKE_WORD_PHONEMES="hi aLFRdDb;hd aLFRdDb"`
+- `CONFIG_CUSTOM_WAKE_WORD_THRESHOLD=14`
+- `CONFIG_CUSTOM_WAKE_WORD_MIN_CONFIDENCE=30`
+- `CONFIG_SEND_WAKE_WORD_DATA` 关闭（仅本地唤醒，不向 gateway 发送 wake-word sideband / 预卷音频）
 - `CONFIG_SR_MN_EN_MULTINET6_QUANT=y`
 - `CONFIG_LANGUAGE_EN_US=y`
 
@@ -41,10 +44,8 @@
 - 生成器：`scripts/generate_alfred_emoji.py`
 - 资源组件目录：`components/alfredo-fonts`
 - 资源打包使用集合：`twemoji_128`
-- 当前眼睛风格：
-  - 常规表情：`宽7, 高4`（7x4）
-  - `sleeping`：更宽更扁的闭眼
-  - `sleepy`：半闭眼
+- 当前生成并保留的 face key：`neutral`、`happy`、`sad`、`thinking`、`listening`、`noconnection`、`grieved`、`sleeping`
+- 其余 Alfredo SVG 先保留在 `scripts/alfred_svg` 作为源素材，但不再生成到组件 PNG / 静态 emoji 代码里
 
 ---
 

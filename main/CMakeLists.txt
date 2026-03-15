@@ -220,7 +220,7 @@ if(NOT LANG_DIR STREQUAL "en-US")
     endforeach()
 endif()
 
-file(GLOB COMMON_SOUNDS ${CMAKE_CURRENT_SOURCE_DIR}/assets/common/*.ogg)
+file(GLOB_RECURSE COMMON_SOUNDS ${CMAKE_CURRENT_SOURCE_DIR}/assets/common/*.ogg)
 
 # If target chip is ESP32, exclude specific files to avoid build errors
 if(CONFIG_IDF_TARGET_ESP32)

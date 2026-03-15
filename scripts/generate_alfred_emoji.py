@@ -34,40 +34,25 @@ def find_default_component_dir() -> Path:
 DEFAULT_COMPONENT_DIR = find_default_component_dir()
 
 FACE_TO_EMOTIONS = {
-    "calm": ["neutral", "cool", "confident"],
+    "calm": ["neutral"],
     "smile": ["happy"],
-    "laugh": ["laughing", "funny"],
-    "worried": ["sad", "crying", "thinking", "confused"],
-    "angry": ["angry"],
-    "shy": ["loving", "embarrassed", "kissy"],
-    "surprised": ["surprised", "shocked"],
-    "wink": ["winking", "silly"],
-    "sleepy": ["relaxed", "sleepy"],
-    "talk": ["delicious"],
+    "worried": ["sad"],
+    "sleeping": ["sleeping"],
+    "thinking": ["thinking"],
+    "listening": ["listening"],
+    "noconnection": ["noconnection"],
+    "grieved": ["grieved"],
 }
 
 EMOTION_CODEPOINTS = {
     "neutral": 0x1F636,
     "happy": 0x1F642,
-    "laughing": 0x1F606,
-    "funny": 0x1F602,
     "sad": 0x1F614,
-    "angry": 0x1F620,
-    "crying": 0x1F62D,
-    "loving": 0x1F60D,
-    "embarrassed": 0x1F633,
-    "surprised": 0x1F62F,
-    "shocked": 0x1F631,
     "thinking": 0x1F914,
-    "winking": 0x1F609,
-    "cool": 0x1F60E,
-    "relaxed": 0x1F60C,
-    "delicious": 0x1F924,
-    "kissy": 0x1F618,
-    "confident": 0x1F60F,
-    "sleepy": 0x1F634,
-    "silly": 0x1F61C,
-    "confused": 0x1F644,
+    "sleeping": 0xE001,
+    "listening": 0xE002,
+    "noconnection": 0xE003,
+    "grieved": 0xE004,
 }
 
 PNG_COLLECTIONS = {
@@ -168,7 +153,7 @@ def build_speaking_svg(svg_path: Path) -> str:
     marker = '<g class="mouth">'
     replacement = f'<g class="mouth" transform="{MOUTH_SPEAKING_TRANSFORM}">'
     if marker not in svg_content:
-        raise ValueError(f"SVG mouth group not found in {svg_path}")
+        return svg_content
     return svg_content.replace(marker, replacement, 1)
 
 

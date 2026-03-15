@@ -730,6 +730,18 @@ void AudioService::EnableAudioTesting(bool enable) {
 }
 
 void AudioService::EnableDeviceAec(bool enable) {
+#if !CONFIG_USE_DEVICE_AEC
+    if (enable) {
+        ESP_LOGW(TAG, "Device AEC is disabled in build config");
+    }
+    device_aec_enabled_ = false;
+    return;
+#else
+    if (enable == device_aec_enabled_) {
+        ESP_LOGD(TAG, "Device AEC already %s", enable ? "enabled" : "disabled");
+        return;
+    }
+
     ESP_LOGI(TAG, "%s device AEC", enable ? "Enabling" : "Disabling");
     if (!audio_processor_initialized_) {
         audio_processor_->Initialize(codec_, OPUS_FRAME_DURATION_MS, models_list_);
@@ -741,7 +753,13 @@ void AudioService::EnableDeviceAec(bool enable) {
         enable = false;
     }
 
+    if (enable == device_aec_enabled_) {
+        return;
+    }
+
     audio_processor_->EnableDeviceAec(enable);
+    device_aec_enabled_ = enable;
+#endif
 }
 
 void AudioService::SetCallbacks(AudioServiceCallbacks& callbacks) {
@@ -925,7 +943,12 @@ void AudioService::SetModelsList(srmodel_list_t* models_list) {
 
 bool AudioService::IsAfeWakeWord() {
 #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32P4
-    return wake_word_ != nullptr && dynamic_cast<AfeWakeWord*>(wake_word_.get()) != nullptr;
+    if (wake_word_ == nullptr) {
+        return false;
+    }
+    // Keep legacy API name, but treat custom wake word as AFE-capable too.
+    return dynamic_cast<AfeWakeWord*>(wake_word_.get()) != nullptr ||
+           dynamic_cast<CustomWakeWord*>(wake_word_.get()) != nullptr;
 #else
     return false;
 #endif

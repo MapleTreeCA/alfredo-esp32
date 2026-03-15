@@ -173,10 +173,6 @@ bool CustomWakeWord::Initialize(AudioCodec* codec, srmodel_list_t* models_list) 
         language_ = "cn";
         models_ = esp_srmodel_init("model");
 #ifdef CONFIG_CUSTOM_WAKE_WORD
-        threshold_ = CONFIG_CUSTOM_WAKE_WORD_THRESHOLD / 100.0f;
-#ifdef CONFIG_CUSTOM_WAKE_WORD_MIN_CONFIDENCE
-        min_confidence_ = CONFIG_CUSTOM_WAKE_WORD_MIN_CONFIDENCE / 100.0f;
-#endif
         AppendCommandVariants(commands_, CONFIG_CUSTOM_WAKE_WORD, CONFIG_CUSTOM_WAKE_WORD_DISPLAY, "wake",
 #ifdef CONFIG_CUSTOM_WAKE_WORD_PHONEMES
             CONFIG_CUSTOM_WAKE_WORD_PHONEMES
@@ -190,6 +186,28 @@ bool CustomWakeWord::Initialize(AudioCodec* codec, srmodel_list_t* models_list) 
         ParseWakenetModelConfig();
     }
 
+    // Always apply compile-time defaults after index.json parsing so
+    // sdkconfig values remain effective even when models are loaded from assets.
+#ifdef CONFIG_CUSTOM_WAKE_WORD_THRESHOLD
+    threshold_ = CONFIG_CUSTOM_WAKE_WORD_THRESHOLD / 100.0f;
+#endif
+#ifdef CONFIG_CUSTOM_WAKE_WORD_MIN_CONFIDENCE
+    min_confidence_ = CONFIG_CUSTOM_WAKE_WORD_MIN_CONFIDENCE / 100.0f;
+#endif
+
+    // Prefer sdkconfig wake-word list over packaged index.json to keep
+    // behavior deterministic across rebuilt assets.
+#ifdef CONFIG_CUSTOM_WAKE_WORD
+    commands_.clear();
+    AppendCommandVariants(commands_, CONFIG_CUSTOM_WAKE_WORD, CONFIG_CUSTOM_WAKE_WORD_DISPLAY, "wake",
+#ifdef CONFIG_CUSTOM_WAKE_WORD_PHONEMES
+        CONFIG_CUSTOM_WAKE_WORD_PHONEMES
+#else
+        ""
+#endif
+    );
+#endif
+
     RuntimeWakeWordConfig runtime_wake_word_config;
     if (RuntimeConfig::LoadWakeWordConfig(runtime_wake_word_config)) {
         if (runtime_wake_word_config.has_threshold) {
@@ -201,6 +219,17 @@ bool CustomWakeWord::Initialize(AudioCodec* codec, srmodel_list_t* models_list) 
                 threshold_percent = 99;
             }
             threshold_ = threshold_percent / 100.0f;
+        }
+
+        if (runtime_wake_word_config.has_min_confidence) {
+            int min_confidence_percent = runtime_wake_word_config.min_confidence;
+            if (min_confidence_percent < 10) {
+                min_confidence_percent = 10;
+            }
+            if (min_confidence_percent > 99) {
+                min_confidence_percent = 99;
+            }
+            min_confidence_ = min_confidence_percent / 100.0f;
         }
 
         if (runtime_wake_word_config.has_commands && !runtime_wake_word_config.commands.empty()) {
@@ -222,6 +251,7 @@ bool CustomWakeWord::Initialize(AudioCodec* codec, srmodel_list_t* models_list) 
         return false;
     }
     ESP_LOGI(TAG, "Custom wake word variants: %s", JoinCommandsForLog(commands_).c_str());
+    ESP_LOGI(TAG, "Custom wake word config: threshold=%.2f min_confidence=%.2f", threshold_, min_confidence_);
 
     if (models_ == nullptr || models_->num == -1) {
         ESP_LOGE(TAG, "Failed to initialize wakenet model");
@@ -513,12 +543,16 @@ void CustomWakeWord::AudioDetectionTask() {
             continue;
         }
 
-        auto res = afe_iface_->fetch_with_delay(afe_data_, pdMS_TO_TICKS(100));
+        // Block until AFE has data. Polling with a short timeout causes
+        // frequent "Ringbuffer ... empty" warnings when feed cadence is lower
+        // than fetch cadence.
+        auto res = afe_iface_->fetch_with_delay(afe_data_, portMAX_DELAY);
         if (!running_ || res == nullptr || res->ret_value == ESP_FAIL) {
             continue;
         }
 
-        if (res->vad_state == VAD_SPEECH) {
+        const bool is_speech_frame = (res->vad_state == VAD_SPEECH);
+        if (is_speech_frame) {
             if (!afe_speech_active_) {
                 afe_speech_active_ = true;
                 afe_speech_frames_ = 0;
@@ -534,14 +568,13 @@ void CustomWakeWord::AudioDetectionTask() {
 
         {
             std::lock_guard<std::mutex> lock(input_buffer_mutex_);
+            // Keep VAD for debug visibility, but continuously feed multinet like
+            // xiaozhi's custom wake flow to reduce misses around VAD boundaries.
             auto samples = res->data_size / sizeof(int16_t);
             detect_buffer_.insert(detect_buffer_.end(), res->data, res->data + samples);
-            // Bound each loop's work to avoid starving IDLE0 and triggering task watchdog.
-            DetectFromBuffer(detect_buffer_, 3);
+            DetectFromBuffer(detect_buffer_, 0);
         }
-        // Always yield a tiny timeslice; this task can become compute-heavy when background
-        // noise causes continuous fetches and would otherwise starve IDLE0.
-        vTaskDelay(pdMS_TO_TICKS(1));
+        taskYIELD();
     }
 }
 

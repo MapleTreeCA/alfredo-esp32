@@ -248,7 +248,13 @@ bool RuntimeConfig::LoadWakeWordConfig(RuntimeWakeWordConfig& out) {
         out.threshold = threshold->valueint;
     }
 
-    return out.has_commands || out.has_display || out.has_phonemes || out.has_threshold;
+    auto min_confidence = cJSON_GetObjectItem(wake_word, "min_confidence");
+    if (cJSON_IsNumber(min_confidence)) {
+        out.has_min_confidence = true;
+        out.min_confidence = min_confidence->valueint;
+    }
+
+    return out.has_commands || out.has_display || out.has_phonemes || out.has_threshold || out.has_min_confidence;
 }
 
 bool RuntimeConfig::LoadConversationConfig(RuntimeConversationConfig& out) {

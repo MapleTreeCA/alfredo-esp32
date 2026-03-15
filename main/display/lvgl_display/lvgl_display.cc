@@ -224,7 +224,7 @@ void LvglDisplay::SetPreviewImage(std::unique_ptr<LvglImage> image) {
 void LvglDisplay::SetPowerSaveMode(bool on) {
     if (on) {
         SetChatMessage("system", "");
-        SetEmotion("sleepy");
+        SetEmotion("sleeping");
     } else {
         SetChatMessage("system", "");
         SetEmotion("neutral");

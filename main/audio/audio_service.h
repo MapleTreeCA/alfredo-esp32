@@ -183,6 +183,7 @@ private:
 
     bool wake_word_initialized_ = false;
     bool audio_processor_initialized_ = false;
+    bool device_aec_enabled_ = false;
     bool voice_detected_ = false;
     bool service_stopped_ = true;
     bool audio_input_need_warmup_ = false;

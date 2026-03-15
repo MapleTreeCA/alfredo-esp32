@@ -18,7 +18,7 @@ python ./scripts/release.py m5stack-core-s3
 可通过 SD 卡配置（无需重新 build/烧录）：
 
 - `websocket.url/token/version`
-- `wake_word.commands/display/phonemes/threshold`
+- `wake_word.commands/display/phonemes/threshold/min_confidence`
 - `conversation.aec_mode`（`off` / `device` / `server`）
 - `conversation.continue_listening_after_tts_stop`
 - `conversation.post_tts_listen_guard_ms`
@@ -45,7 +45,7 @@ python ./scripts/release.py m5stack-core-s3
 ```bash
 /Users/dev/.espressif/python_env/idf5.5_py3.14_env/bin/python \
   managed_components/espressif__esp-sr/tool/multinet_g2p.py \
-  -t "alfredo;hey alfredo;hello alfredo"
+  -t "hi alfredo;hey alfredo"
 ```
 
 **烧录**

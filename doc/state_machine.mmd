@@ -1,0 +1,21 @@
+stateDiagram-v2
+    Unknown --> Starting
+    Starting --> WifiConfiguring
+    Starting --> Activating
+    WifiConfiguring --> Activating
+    Activating --> WifiConfiguring
+    WifiConfiguring --> AudioTesting
+    AudioTesting --> WifiConfiguring
+    Activating --> Idle
+    
+    Idle --> Connecting : 唤醒词/按钮
+    Connecting --> Idle : (失败)
+    Connecting --> Speaking : (成功)
+    Speaking --> Listening : (本地 wake ack / TTS)
+    Listening --> Idle : (手动停止)
+    Listening --> Speaking : TTS start
+    Speaking --> Listening : TTS stop + auto
+    Speaking --> Idle : TTS stop + manual
+    Connecting --> Idle : channel unhealthy self-heal
+    Listening --> Idle : channel unhealthy self-heal
+    Speaking --> Idle : channel unhealthy self-heal

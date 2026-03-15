@@ -7,6 +7,7 @@
 #include <esp_timer.h>
 
 #include <string>
+#include <string_view>
 #include <mutex>
 #include <deque>
 #include <memory>
@@ -114,6 +115,7 @@ public:
     AecMode GetAecMode() const { return aec_mode_; }
     void PlaySound(const std::string_view& sound);
     AudioService& GetAudioService() { return audio_service_; }
+    bool IsWakeWordAckInProgress() const { return wake_word_ack_in_progress_.load(std::memory_order_acquire); }
     
     /**
      * Reset protocol resources (thread-safe)
@@ -141,8 +143,9 @@ private:
     bool aborted_ = false;
     bool assets_version_checked_ = false;
     std::string firmware_version_;
-    bool play_popup_on_listening_ = false;  // Flag to play popup sound after state changes to listening
     bool pending_resume_listening_ = false;
+    bool force_start_turn_on_listening_ = false;
+    std::atomic<bool> wake_word_ack_in_progress_{false};
     std::atomic<bool> tts_downlink_window_open_{false};
     std::atomic<int64_t> last_tts_audio_at_us_{0};
     std::atomic<int> last_tts_frame_duration_ms_{60};
@@ -163,6 +166,8 @@ private:
     void HandleWakeWordDetectedEvent();
     void ContinueOpenAudioChannel(ListeningMode mode);
     void ContinueWakeWordInvoke(const std::string& wake_word);
+    void BeginWakeWordListeningSequence(ListeningMode mode);
+    void PlayWakeWordAckAndEnterListening();
 
     // Activation task (runs in background)
     void ActivationTask();
@@ -177,6 +182,8 @@ private:
     void ScheduleResumeListeningAfterGuard();
     void CancelPendingListeningResume();
     bool ShouldAcceptIncomingTtsAudio() const;
+    const char* ResolveFaceForState(DeviceState state) const;
+    void ApplyFaceForState(DeviceState state);
     void OpenTtsDownlinkWindow();
     void CloseTtsDownlinkWindow();
     void NoteIncomingTtsAudio(const AudioStreamPacket& packet);

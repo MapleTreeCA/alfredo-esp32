@@ -405,7 +405,8 @@ void LcdDisplay::UpdateSleepOverlayLocked() {
         return;
     }
 
-    bool show_overlay = power_save_mode_ && current_emotion_ == "sleepy";
+    bool show_overlay = power_save_mode_ &&
+        (current_emotion_ == "sleepy" || current_emotion_ == "sleeping");
     if (preview_image_ != nullptr && !lv_obj_has_flag(preview_image_, LV_OBJ_FLAG_HIDDEN)) {
         show_overlay = false;
     }
@@ -476,6 +477,13 @@ void LcdDisplay::UpdateSpeakingAnimation() {
     }
 
     bool is_speaking = Application::GetInstance().GetDeviceState() == kDeviceStateSpeaking;
+    bool is_wake_word_ack = Application::GetInstance().IsWakeWordAckInProgress();
+    if (is_speaking && is_wake_word_ack && !gif_controller_) {
+        speaking_animation_frame_ = !speaking_animation_frame_;
+        UpdateEmojiVisualLocked(speaking_animation_frame_ ? "neutral" : "happy");
+        return;
+    }
+
     if (!is_speaking || !current_emotion_has_speaking_variant_ || gif_controller_) {
         if (!speaking_animation_frame_) {
             return;

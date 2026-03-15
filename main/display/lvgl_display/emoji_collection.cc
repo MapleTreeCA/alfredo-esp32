@@ -35,75 +35,45 @@ EmojiCollection::~EmojiCollection() {
     emoji_collection_.clear();
 }
 
-// These are generated from Alfred SVG faces in the font component's src/emoji.
-extern const lv_image_dsc_t alfred_face_calm_32; // neutral/cool/confident
+// These are generated from Alfredo SVG faces in the font component's src/emoji.
+extern const lv_image_dsc_t alfred_face_calm_32; // neutral
 extern const lv_image_dsc_t alfred_face_smile_32; // happy
-extern const lv_image_dsc_t alfred_face_laugh_32; // laughing/funny
-extern const lv_image_dsc_t alfred_face_worried_32; // sad/crying/thinking/confused
-extern const lv_image_dsc_t alfred_face_angry_32; // angry
-extern const lv_image_dsc_t alfred_face_shy_32; // loving/embarrassed/kissy
-extern const lv_image_dsc_t alfred_face_surprised_32; // surprised/shocked
-extern const lv_image_dsc_t alfred_face_wink_32; // winking/silly
-extern const lv_image_dsc_t alfred_face_sleepy_32; // relaxed/sleepy
-extern const lv_image_dsc_t alfred_face_talk_32; // delicious
+extern const lv_image_dsc_t alfred_face_worried_32; // sad
+extern const lv_image_dsc_t alfred_face_sleeping_32; // sleeping
+extern const lv_image_dsc_t alfred_face_thinking_32; // thinking
+extern const lv_image_dsc_t alfred_face_listening_32; // listening
+extern const lv_image_dsc_t alfred_face_noconnection_32; // noconnection
+extern const lv_image_dsc_t alfred_face_grieved_32; // grieved
 
 Twemoji32::Twemoji32() {
     AddEmoji("neutral", new LvglSourceImage(&alfred_face_calm_32));
     AddEmoji("happy", new LvglSourceImage(&alfred_face_smile_32));
-    AddEmoji("laughing", new LvglSourceImage(&alfred_face_laugh_32));
-    AddEmoji("funny", new LvglSourceImage(&alfred_face_laugh_32));
     AddEmoji("sad", new LvglSourceImage(&alfred_face_worried_32));
-    AddEmoji("angry", new LvglSourceImage(&alfred_face_angry_32));
-    AddEmoji("crying", new LvglSourceImage(&alfred_face_worried_32));
-    AddEmoji("loving", new LvglSourceImage(&alfred_face_shy_32));
-    AddEmoji("embarrassed", new LvglSourceImage(&alfred_face_shy_32));
-    AddEmoji("surprised", new LvglSourceImage(&alfred_face_surprised_32));
-    AddEmoji("shocked", new LvglSourceImage(&alfred_face_surprised_32));
-    AddEmoji("thinking", new LvglSourceImage(&alfred_face_worried_32));
-    AddEmoji("winking", new LvglSourceImage(&alfred_face_wink_32));
-    AddEmoji("cool", new LvglSourceImage(&alfred_face_calm_32));
-    AddEmoji("relaxed", new LvglSourceImage(&alfred_face_sleepy_32));
-    AddEmoji("delicious", new LvglSourceImage(&alfred_face_talk_32));
-    AddEmoji("kissy", new LvglSourceImage(&alfred_face_shy_32));
-    AddEmoji("confident", new LvglSourceImage(&alfred_face_calm_32));
-    AddEmoji("sleepy", new LvglSourceImage(&alfred_face_sleepy_32));
-    AddEmoji("silly", new LvglSourceImage(&alfred_face_wink_32));
-    AddEmoji("confused", new LvglSourceImage(&alfred_face_worried_32));
+    AddEmoji("sleeping", new LvglSourceImage(&alfred_face_sleeping_32));
+    AddEmoji("thinking", new LvglSourceImage(&alfred_face_thinking_32));
+    AddEmoji("listening", new LvglSourceImage(&alfred_face_listening_32));
+    AddEmoji("noconnection", new LvglSourceImage(&alfred_face_noconnection_32));
+    AddEmoji("grieved", new LvglSourceImage(&alfred_face_grieved_32));
 }
 
 
-// These are generated from Alfred SVG faces in the font component's src/emoji.
-extern const lv_image_dsc_t alfred_face_calm_64; // neutral/cool/confident
+// These are generated from Alfredo SVG faces in the font component's src/emoji.
+extern const lv_image_dsc_t alfred_face_calm_64; // neutral
 extern const lv_image_dsc_t alfred_face_smile_64; // happy
-extern const lv_image_dsc_t alfred_face_laugh_64; // laughing/funny
-extern const lv_image_dsc_t alfred_face_worried_64; // sad/crying/thinking/confused
-extern const lv_image_dsc_t alfred_face_angry_64; // angry
-extern const lv_image_dsc_t alfred_face_shy_64; // loving/embarrassed/kissy
-extern const lv_image_dsc_t alfred_face_surprised_64; // surprised/shocked
-extern const lv_image_dsc_t alfred_face_wink_64; // winking/silly
-extern const lv_image_dsc_t alfred_face_sleepy_64; // relaxed/sleepy
-extern const lv_image_dsc_t alfred_face_talk_64; // delicious
+extern const lv_image_dsc_t alfred_face_worried_64; // sad
+extern const lv_image_dsc_t alfred_face_sleeping_64; // sleeping
+extern const lv_image_dsc_t alfred_face_thinking_64; // thinking
+extern const lv_image_dsc_t alfred_face_listening_64; // listening
+extern const lv_image_dsc_t alfred_face_noconnection_64; // noconnection
+extern const lv_image_dsc_t alfred_face_grieved_64; // grieved
 
 Twemoji64::Twemoji64() {
     AddEmoji("neutral", new LvglSourceImage(&alfred_face_calm_64));
     AddEmoji("happy", new LvglSourceImage(&alfred_face_smile_64));
-    AddEmoji("laughing", new LvglSourceImage(&alfred_face_laugh_64));
-    AddEmoji("funny", new LvglSourceImage(&alfred_face_laugh_64));
     AddEmoji("sad", new LvglSourceImage(&alfred_face_worried_64));
-    AddEmoji("angry", new LvglSourceImage(&alfred_face_angry_64));
-    AddEmoji("crying", new LvglSourceImage(&alfred_face_worried_64));
-    AddEmoji("loving", new LvglSourceImage(&alfred_face_shy_64));
-    AddEmoji("embarrassed", new LvglSourceImage(&alfred_face_shy_64));
-    AddEmoji("surprised", new LvglSourceImage(&alfred_face_surprised_64));
-    AddEmoji("shocked", new LvglSourceImage(&alfred_face_surprised_64));
-    AddEmoji("thinking", new LvglSourceImage(&alfred_face_worried_64));
-    AddEmoji("winking", new LvglSourceImage(&alfred_face_wink_64));
-    AddEmoji("cool", new LvglSourceImage(&alfred_face_calm_64));
-    AddEmoji("relaxed", new LvglSourceImage(&alfred_face_sleepy_64));
-    AddEmoji("delicious", new LvglSourceImage(&alfred_face_talk_64));
-    AddEmoji("kissy", new LvglSourceImage(&alfred_face_shy_64));
-    AddEmoji("confident", new LvglSourceImage(&alfred_face_calm_64));
-    AddEmoji("sleepy", new LvglSourceImage(&alfred_face_sleepy_64));
-    AddEmoji("silly", new LvglSourceImage(&alfred_face_wink_64));
-    AddEmoji("confused", new LvglSourceImage(&alfred_face_worried_64));
+    AddEmoji("sleeping", new LvglSourceImage(&alfred_face_sleeping_64));
+    AddEmoji("thinking", new LvglSourceImage(&alfred_face_thinking_64));
+    AddEmoji("listening", new LvglSourceImage(&alfred_face_listening_64));
+    AddEmoji("noconnection", new LvglSourceImage(&alfred_face_noconnection_64));
+    AddEmoji("grieved", new LvglSourceImage(&alfred_face_grieved_64));
 }

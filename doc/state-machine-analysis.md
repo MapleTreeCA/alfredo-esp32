@@ -12,7 +12,7 @@
 | Idle | 3 | 待机（监听唤醒词）|
 | Connecting | 4 | 正在连接 Gateway |
 | Listening | 5 | 正在收听用户语音 |
-| Speaking | 6 | 正在播放 TTS |
+| Speaking | 6 | 正在播放 TTS / 固件本地确认音 |
 | Upgrading | 7 | OTA 升级（未使用）|
 | Activating | 8 | 激活中 |
 | AudioTesting | 9 | 音频测试 |
@@ -33,6 +33,9 @@
                         ├── 唤醒词/按钮 ──→ [Connecting] ─┤ (失败)
                         │                      │         │
                         │                      ▼ (成功)  │
+                        │               [Speaking]       │
+                        │            (本地 wake ack / TTS)│
+                        │                      ▼         │
                         │                  [Listening] ──┤ (手动停止)
                         │                    ↕           │
                         ├── TTS start ──→ [Speaking] ────┘ (TTS stop + manual)
@@ -42,17 +45,51 @@
                         └── (channel unhealthy self-heal)
 ```
 
-### 1.3 各状态音频处理
+补充说明：
+
+- 唤醒词路径已经包含固件本地确认音，不是直接 `Connecting -> Listening`
+- 实际路径有两种：
+  - `Idle -> Connecting -> Speaking(本地 wake ack) -> Listening -> listen.start`
+  - `Idle -> Speaking(本地 wake ack) -> Listening -> listen.start`
+- 第二种发生在 audio channel 已经打开时，不需要重新走 `Connecting`
+
+### 1.3 状态-Face 映射
+
+| 状态 | 默认 face | 说明 |
+|------|-----------|------|
+| Unknown | `neutral` | 未知态回落到默认脸 |
+| Starting | `thinking` | 启动中 |
+| WifiConfiguring | `thinking` | 配网 / 等待配置 |
+| Idle | `neutral` | 待机 |
+| Connecting | `thinking` | 正在连 gateway |
+| Listening | `listening` | 正在听用户说话 |
+| Speaking | `happy` 或保留当前 emotion | wake ack 用 `happy`；正常 TTS 不覆盖 LLM emotion |
+| Upgrading | `thinking` | 预留 |
+| Activating | `thinking` | 激活中 |
+| AudioTesting | `listening` | 复用 listening 脸 |
+| FatalError | `grieved` | 致命错误 |
+
+补充：
+
+- 当前固件实际保留的表情 key 只有：`neutral`、`happy`、`sad`、`thinking`、`listening`、`noconnection`、`grieved`、`sleeping`
+- 断网不是独立状态，但断网事件会临时切到 `noconnection`
+- 省电脸不是状态机状态，显示层会切到 `sleeping`
+- `Speaking` 变体不是单独状态映射，而是显示层自动把当前 face 切到 `*_speaking`
+- 例如：`neutral -> neutral_speaking`、`listening -> listening_speaking`、`happy -> happy_speaking`
+- wake ack 是特例：本地确认音期间显示层切 `happy <-> neutral`
+- 正常 TTS 不覆盖 LLM 下发的 emotion，所以如果当前 face 是 `sad` / `thinking` / `happy` / `neutral`，进入 `Speaking` 后会自动显示对应的 `*_speaking`
+
+### 1.4 各状态音频处理
 
 | 状态 | 唤醒词检测 | 语音处理 | 说明 |
 |------|-----------|---------|------|
 | Idle | **ON** | OFF | 等待唤醒 |
 | Connecting | ON (继承) | OFF | 连接中不改变唤醒词状态 |
 | Listening | ON (仅 AFE + 配置) | **ON** | 可在听的同时检测唤醒词 |
-| Speaking | ON (仅 AFE) | OFF | 可在播放中检测唤醒词打断 |
+| Speaking | ON (仅 AFE) | OFF | 播放 TTS 或本地 wake ack，可检测唤醒词打断 |
 | WifiConfiguring | OFF | OFF | 配网模式 |
 
-### 1.4 关键时序参数（设备端）
+### 1.5 关键时序参数（设备端）
 
 | 参数 | 值 | 来源 |
 |------|---|------|
@@ -108,7 +145,9 @@ Gateway 没有显式状态枚举，通过字段组合推断：
   │── hello ──────────────────→  │  helloSeen=true
   │←── hello response ──────── │
   │                              │
-  │── listen(detect, "Alfredo")→ │  pendingWakeWord="Alfredo"
+  │  [本地检测唤醒词]              │
+  │  [播放 hi there 本地确认音]    │
+  │  [进入 Listening]             │
   │── listen(start, mode=auto)→  │  startTurn(), arm timers
   │── audio frames ──────────→  │  append to turnBuffer
   │   ...                        │  silence timer fires (700ms)
@@ -126,6 +165,13 @@ Gateway 没有显式状态枚举，通过字段组合推断：
   │   ...                        │
 ```
 
+说明：
+
+- wakeup 后播放的是固件本地资源 `main/assets/common/generated/hi-there-daniel.ogg`
+- 代码路径是 `HandleWakeWordDetectedEvent()` -> `BeginWakeWordListeningSequence()` -> `PlayWakeWordAckAndEnterListening()`
+- `CONFIG_SEND_WAKE_WORD_DATA` 关闭后，不再向 gateway 发送 `listen.detect` 或 wake-word 预卷音频
+- gateway 只从 `listen.start` 开始新 turn
+
 ### 3.2 唤醒词打断流程
 
 ```
@@ -135,7 +181,8 @@ Gateway 没有显式状态枚举，通过字段组合推断：
   │── abort(wake_word_detected)→ │  cancelActive(), tts stop
   │←── tts(stop) ─────────────  │
   │                              │
-  │── listen(detect, "Alfredo")→ │  pendingWakeWord
+  │  [播放 hi there 本地确认音]    │
+  │  [进入 Listening]             │
   │── listen(start, mode=auto)→  │  new turn
   │── audio frames ──────────→  │
 ```
@@ -300,7 +347,7 @@ if (listening_mode_ == kListeningModeManualStop) {
 
 **从唤醒到开始听：**
 ```
-唤醒词检测 → Connecting → OpenAudioChannel (≤10s) → Listening → popup sound
+唤醒词检测 → Connecting → OpenAudioChannel (≤10s) → Speaking(本地 wake ack) → Listening → listen(start)
 最佳情况: ~200ms (channel 已打开)
 最差情况: ~10s (需要新建 WebSocket)
 若 Connecting 卡住: 15s 后 self-heal 回到 Idle ✅

@@ -5,9 +5,9 @@
     "version": 1
   },
   "wake_word": {
-    "commands": "alfredo;hey alfredo;hello alfredo",
+    "commands": "hi alfredo;hey alfredo",
     "display": "Alfredo",
-    "phonemes": "aLFRdDb;hd aLFRdDb;hcLb aLFRdDb",
+    "phonemes": "hi aLFRdDb;hd aLFRdDb",
     "threshold": 20
   },
   "conversation": {

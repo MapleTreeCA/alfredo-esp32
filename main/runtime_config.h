@@ -21,6 +21,8 @@ struct RuntimeWakeWordConfig {
     std::string phonemes;
     bool has_threshold = false;
     int threshold = 0;
+    bool has_min_confidence = false;
+    int min_confidence = 0;
 };
 
 struct RuntimeConversationConfig {

@@ -26,7 +26,7 @@
 - CoreS3 默认 WebSocket 启动配置已对齐自建 gateway（`18910/ws`）。
 - 增加 SD 卡运行时配置（`/sdcard/alfredo.cfg`，兼容旧路径 `/sdcard/alfredo-config.json`），可免重编译调整：
   - websocket
-  - wake_word
+  - wake_word（`commands/display/phonemes/threshold/min_confidence`）
   - conversation
   - audio/display/wifi/power_save/head_gimbal
 - 语音状态机已切到“回复后继续监听”的对话路径，并加入 TTS 后保护窗口参数。
