@@ -14,7 +14,7 @@
 
 ## 2. 当前架构（已跑通）
 
-- 固件通过 WebSocket 连接 gateway：`ws://10.0.0.175:18910/ws`
+- 固件通过 WebSocket 连接 gateway：`ws://10.0.0.175:1455/ws`
 - 音频上行：设备持续发送 Opus 帧
 - 网关处理链路：`STT -> LLM -> TTS -> Opus 下行`
 - 设备下行播放：接收 Opus 并解码播放
@@ -23,7 +23,7 @@
 
 ## 3. 已完成项（本阶段）
 
-- CoreS3 默认 WebSocket 启动配置已对齐自建 gateway（`18910/ws`）。
+- CoreS3 默认 WebSocket 启动配置已对齐自建 gateway（`1455/ws`）。
 - 增加 SD 卡运行时配置（`/sdcard/alfredo.cfg`，兼容旧路径 `/sdcard/alfredo-config.json`），可免重编译调整：
   - websocket
   - wake_word（`commands/display/phonemes/threshold/min_confidence`）
@@ -50,11 +50,14 @@
 
 说明：当前 interim 采用 gateway 侧增量调度（周期转写当前累计音频），并非 STT 提供商原生双向流式接口；后续可再迭代到 provider-native streaming 以进一步降低时延和成本。
 
-### 4.2 英文唤醒词 `alfredo` 仍有约束
+### 4.2 唤醒词已切换为 `wn9_himfive`（Wakenet）
 
-日志显示命令词图构建时 `alfredo` 被判定为无效，当前稳定生效的是拼音形式（如 `a fu lei duo`）。
+原 Multinet 自定义唤醒词（`hi alfredo` / `hey alfredo`）在英文识别上不稳定，且 Multinet 是命令词模型，对女声识别率尤其有限。
 
-影响：直接说英文 `alfredo` 可能无法稳定唤醒。
+**当前配置：** `CONFIG_USE_AFE_WAKE_WORD=y` + `CONFIG_SR_WN_WN9_HIMFIVE=y`
+- 唤醒词：**"Hi M Five"**
+- 模型类型：预训练 Wakenet，男女声均可触发
+- 运行时实现：`AfeWakeWord`（由 `SetModelsList()` 自动选用）
 
 ### 4.3 仍有轻微误触发/杂音触发风险
 
@@ -91,7 +94,7 @@ idf.py -p /dev/cu.usbmodem1101 monitor
 
 重点看：
 
-- `Connecting to websocket server: ws://10.0.0.175:18910/ws`
+- `Connecting to websocket server: ws://10.0.0.175:1455/ws`
 - `Session ID: ...`
 - `State: idle -> listening -> speaking -> listening`
 
@@ -101,7 +104,7 @@ idf.py -p /dev/cu.usbmodem1101 monitor
 
 操作步骤：
 
-1. 打开 `http://127.0.0.1:18910/`
+1. 打开 `http://127.0.0.1:1455/`
 2. 在 `Device SD Config` 面板点击 `Refresh Devices`
 3. 选择目标设备（按 `device_id (remote_addr)` 展示）
 4. 编辑 `Runtime Config JSON`
@@ -117,7 +120,7 @@ idf.py -p /dev/cu.usbmodem1101 monitor
 
 ## 6. 下一线程建议接力点（按优先级）
 
-1. 处理英文 `alfredo` 唤醒词可用性（命令词模型/词表/策略调整）。
+1. ~~处理英文 `alfredo` 唤醒词可用性~~ — 已切换为 Wakenet `wn9_himfive`（"Hi M Five"），已解决。
 2. 继续压低噪声误触发率（VAD + 后 TTS 保护窗口 + 能量阈值联合调参）。
 3. 继续优化轻微断续（下行节流、解码队列背压、水位观测）。
 4. 评估 provider-native streaming STT（减少 interim 重复转写开销）。

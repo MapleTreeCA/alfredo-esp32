@@ -1416,6 +1416,8 @@ void Application::PlayWakeWordAckAndEnterListening() {
 
 void Application::HandleStateChangedEvent() {
     DeviceState new_state = state_machine_.GetState();
+    DeviceState old_state = prev_device_state_;
+    prev_device_state_ = new_state;
     clock_ticks_ = 0;
 
     if (new_state != kDeviceStateSpeaking) {
@@ -1427,6 +1429,7 @@ void Application::HandleStateChangedEvent() {
     auto display = board.GetDisplay();
     auto led = board.GetLed();
     led->OnStateChanged();
+    board.OnDeviceStateChanged(new_state, old_state);
     
     switch (new_state) {
         case kDeviceStateUnknown:

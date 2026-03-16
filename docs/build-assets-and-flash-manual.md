@@ -15,7 +15,7 @@
 ### 1.1 目标板与网络
 - 目标板：`m5stack-core-s3`（`esp32s3`）
 - 默认 WebSocket：
-  - `CONFIG_BOOT_DEFAULT_WEBSOCKET_URL="ws://10.0.0.175:18910/ws"`
+- `CONFIG_BOOT_DEFAULT_WEBSOCKET_URL="ws://10.0.0.175:1455/ws"`
   - `CONFIG_BOOT_DEFAULT_WEBSOCKET_VERSION=1`
 
 配置来源：
@@ -29,15 +29,14 @@
 说明：此配置用于避免 OCTAL/高速初始化不稳定导致的重启。
 
 ### 1.3 唤醒词（英文）
-- `CONFIG_USE_CUSTOM_WAKE_WORD=y`
-- `CONFIG_CUSTOM_WAKE_WORD="hi alfredo;hey alfredo"`
-- `CONFIG_CUSTOM_WAKE_WORD_DISPLAY="Alfredo"`
-- `CONFIG_CUSTOM_WAKE_WORD_PHONEMES="hi aLFRdDb;hd aLFRdDb"`
-- `CONFIG_CUSTOM_WAKE_WORD_THRESHOLD=14`
-- `CONFIG_CUSTOM_WAKE_WORD_MIN_CONFIDENCE=30`
-- `CONFIG_SEND_WAKE_WORD_DATA` 关闭（仅本地唤醒，不向 gateway 发送 wake-word sideband / 预卷音频）
-- `CONFIG_SR_MN_EN_MULTINET6_QUANT=y`
+- `CONFIG_USE_AFE_WAKE_WORD=y` — 使用预训练 Wakenet 模型（AFE 流水线）
+- `CONFIG_SR_WN_WN9_HIMFIVE=y` — 模型：`wn9_himfive`，唤醒词为 **"Hi M Five"**
+- `CONFIG_SEND_WAKE_WORD_DATA` 关闭（仅本地唤醒，不向 gateway 发送预卷音频）
 - `CONFIG_LANGUAGE_EN_US=y`
+
+> **说明：** 与旧版 Multinet（自定义命令词）不同，Wakenet 是专用唤醒词神经网络，
+> 无需手工调整音素字符串和阈值，男女声识别率均更稳定。
+> 运行时由 `audio_service.cc::SetModelsList()` 自动选用 `AfeWakeWord` 实现类。
 
 ### 1.4 当前表情资源
 - 表情 SVG 源：`scripts/alfred_svg/*.svg`

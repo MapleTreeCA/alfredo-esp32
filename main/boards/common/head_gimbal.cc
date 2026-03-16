@@ -133,6 +133,30 @@ void HeadGimbal::RegisterMcpTools(const std::string& tool_prefix) {
             return CreateStatusJson();
         });
 
+    mcp_server.AddTool(
+        tool_prefix + ".shake",
+        "Shake the head left and right (no/disagreement gesture).",
+        PropertyList({Property("cycles", kPropertyTypeInteger, 2, 1, 5),
+                      Property("amplitude", kPropertyTypeInteger, 30, 5, 60),
+                      Property("period_ms", kPropertyTypeInteger, 600, 200, 2000)}),
+        [this](const PropertyList& properties) -> ReturnValue {
+            Shake(properties["cycles"].value<int>(), properties["amplitude"].value<int>(),
+                  properties["period_ms"].value<int>());
+            return true;
+        });
+
+    mcp_server.AddTool(
+        tool_prefix + ".nod",
+        "Nod the head up and down (yes/agreement gesture).",
+        PropertyList({Property("cycles", kPropertyTypeInteger, 2, 1, 5),
+                      Property("amplitude", kPropertyTypeInteger, 15, 5, 40),
+                      Property("period_ms", kPropertyTypeInteger, 500, 200, 2000)}),
+        [this](const PropertyList& properties) -> ReturnValue {
+            Nod(properties["cycles"].value<int>(), properties["amplitude"].value<int>(),
+                properties["period_ms"].value<int>());
+            return true;
+        });
+
     mcp_server.AddTool(tool_prefix + ".get_status",
                        "Get current head servo status, trims, limits and pins", PropertyList(),
                        [this](const PropertyList&) -> ReturnValue { return CreateStatusJson(); });
@@ -150,6 +174,30 @@ void HeadGimbal::MoveTo(int pan_angle, int tilt_angle, int duration_ms) {
 void HeadGimbal::MoveBy(int delta_pan, int delta_tilt, int duration_ms) {
     std::lock_guard<std::mutex> lock(mutex_);
     MoveUnlocked(pan_.logical_angle + delta_pan, tilt_.logical_angle + delta_tilt, duration_ms);
+}
+
+void HeadGimbal::Shake(int cycles, int amplitude, int period_ms) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!ready_) return;
+    int half = std::max(kMotionStepMs, period_ms / 2);
+    int current_tilt = tilt_.logical_angle;
+    for (int i = 0; i < cycles; ++i) {
+        MoveUnlocked(kCenterAngle - amplitude, current_tilt, half);
+        MoveUnlocked(kCenterAngle + amplitude, current_tilt, half);
+    }
+    MoveUnlocked(kCenterAngle, current_tilt, half / 2);
+}
+
+void HeadGimbal::Nod(int cycles, int amplitude, int period_ms) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!ready_) return;
+    int half = std::max(kMotionStepMs, period_ms / 2);
+    int current_pan = pan_.logical_angle;
+    for (int i = 0; i < cycles; ++i) {
+        MoveUnlocked(current_pan, kCenterAngle + amplitude, half);
+        MoveUnlocked(current_pan, kCenterAngle - amplitude, half);
+    }
+    MoveUnlocked(current_pan, kCenterAngle, half / 2);
 }
 
 void HeadGimbal::LookAt(int x_percent, int y_percent, int duration_ms) {
@@ -204,37 +252,63 @@ cJSON* HeadGimbal::CreateStatusJson() const {
     return root;
 }
 
+static bool ProbeServoPin(gpio_num_t pin) {
+    // SG90 signal line floats high-impedance; use internal pull-down.
+    // If an external pull-up (e.g. from servo PCB) drives the line HIGH,
+    // the pin reads 1.  This is a best-effort heuristic, not guaranteed.
+    gpio_config_t cfg = {};
+    cfg.pin_bit_mask = 1ULL << pin;
+    cfg.mode = GPIO_MODE_INPUT;
+    cfg.pull_down_en = GPIO_PULLDOWN_ENABLE;
+    cfg.pull_up_en = GPIO_PULLUP_DISABLE;
+    cfg.intr_type = GPIO_INTR_DISABLE;
+    gpio_config(&cfg);
+    vTaskDelay(pdMS_TO_TICKS(5));
+    int level = gpio_get_level(pin);
+
+    // Clear pull-down before LEDC takes over; a lingering pull-down
+    // would drag the PWM signal low and prevent the servo from responding.
+    gpio_pulldown_dis(pin);
+
+    ESP_LOGI("HeadGimbal", "Probe pin %d: level=%d (%s)", pin, level,
+             level ? "servo likely connected" : "no pull-up detected");
+    return level == 1;
+}
+
 void HeadGimbal::InitializePwm() {
-    ready_ = pan_.pin != GPIO_NUM_NC && tilt_.pin != GPIO_NUM_NC;
+    ready_ = pan_.pin != GPIO_NUM_NC || tilt_.pin != GPIO_NUM_NC;
     if (!ready_) {
-        ESP_LOGW(TAG, "Head gimbal disabled because one or more pins are not configured");
+        ESP_LOGW(TAG, "Head gimbal disabled: no pins configured");
         return;
     }
 
-    ledc_timer_config_t ledc_timer = {.speed_mode = LEDC_LOW_SPEED_MODE,
-                                      .duty_resolution = LEDC_TIMER_13_BIT,
-                                      .timer_num = timer_,
-                                      .freq_hz = 50,
-                                      .clk_cfg = LEDC_AUTO_CLK};
+    ledc_timer_config_t ledc_timer = {};
+    ledc_timer.speed_mode      = LEDC_LOW_SPEED_MODE;
+    ledc_timer.duty_resolution = LEDC_TIMER_13_BIT;
+    ledc_timer.timer_num       = timer_;
+    ledc_timer.freq_hz         = 50;
+    ledc_timer.clk_cfg         = LEDC_AUTO_CLK;
     ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
 
-    ledc_channel_config_t pan_channel = {.gpio_num = pan_.pin,
-                                         .speed_mode = LEDC_LOW_SPEED_MODE,
-                                         .channel = pan_.channel,
-                                         .intr_type = LEDC_INTR_DISABLE,
-                                         .timer_sel = timer_,
-                                         .duty = 0,
-                                         .hpoint = 0};
-    ESP_ERROR_CHECK(ledc_channel_config(&pan_channel));
+    if (pan_.pin != GPIO_NUM_NC) {
+        ledc_channel_config_t c = {};
+        c.gpio_num   = pan_.pin;
+        c.speed_mode = LEDC_LOW_SPEED_MODE;
+        c.channel    = pan_.channel;
+        c.timer_sel  = timer_;
+        c.duty       = 0;
+        ESP_ERROR_CHECK(ledc_channel_config(&c));
+    }
 
-    ledc_channel_config_t tilt_channel = {.gpio_num = tilt_.pin,
-                                          .speed_mode = LEDC_LOW_SPEED_MODE,
-                                          .channel = tilt_.channel,
-                                          .intr_type = LEDC_INTR_DISABLE,
-                                          .timer_sel = timer_,
-                                          .duty = 0,
-                                          .hpoint = 0};
-    ESP_ERROR_CHECK(ledc_channel_config(&tilt_channel));
+    if (tilt_.pin != GPIO_NUM_NC) {
+        ledc_channel_config_t c = {};
+        c.gpio_num   = tilt_.pin;
+        c.speed_mode = LEDC_LOW_SPEED_MODE;
+        c.channel    = tilt_.channel;
+        c.timer_sel  = timer_;
+        c.duty       = 0;
+        ESP_ERROR_CHECK(ledc_channel_config(&c));
+    }
 
     ESP_LOGI(TAG, "Head gimbal PWM ready: pan=%d tilt=%d", pan_.pin, tilt_.pin);
 }
@@ -310,8 +384,10 @@ void HeadGimbal::MoveUnlocked(int pan_angle, int tilt_angle, int duration_ms) {
 
 void HeadGimbal::WriteAxis(AxisConfig& axis, int logical_angle) {
     axis.logical_angle = ClampAngle(logical_angle);
+    if (axis.pin == GPIO_NUM_NC) {
+        return;
+    }
     axis.physical_angle = ApplyAxisConfig(axis, axis.logical_angle);
-
     uint32_t duty = AngleToDuty(axis.physical_angle);
     ESP_ERROR_CHECK(ledc_set_duty(LEDC_LOW_SPEED_MODE, axis.channel, duty));
     ESP_ERROR_CHECK(ledc_update_duty(LEDC_LOW_SPEED_MODE, axis.channel));

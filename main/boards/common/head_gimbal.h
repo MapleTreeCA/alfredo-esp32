@@ -24,6 +24,8 @@ public:
     void MoveTo(int pan_angle, int tilt_angle, int duration_ms = 0);
     void MoveBy(int delta_pan, int delta_tilt, int duration_ms = 0);
     void LookAt(int x_percent, int y_percent, int duration_ms = 150);
+    void Shake(int cycles = 2, int amplitude = 30, int period_ms = 600);
+    void Nod(int cycles = 2, int amplitude = 15, int period_ms = 500);
 
     void SetTrim(const std::string& axis_name, int trim);
     void SetInverted(const std::string& axis_name, bool inverted);

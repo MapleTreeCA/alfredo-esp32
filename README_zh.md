@@ -51,7 +51,7 @@ idf.py -p /dev/cu.usbmodem1101 flash monitor
 
 ## Gateway 对接（当前主路径）
 
-- WebSocket 默认使用：`ws://<gateway_ip>:18910/ws`
+- WebSocket 默认使用：`ws://<gateway_ip>:1455/ws`
 - 设备端运行时配置放在：`/sdcard/alfredo.cfg`
 - 可通过 Gateway 页面下发配置（Device SD Config）
 

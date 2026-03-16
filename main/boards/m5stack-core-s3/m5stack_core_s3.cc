@@ -6,6 +6,7 @@
 #include "power_save_timer.h"
 #include "i2c_device.h"
 #include "axp2101.h"
+#include "head_gimbal.h"
 
 #include <esp_log.h>
 #include <driver/i2c_master.h>
@@ -126,6 +127,7 @@ private:
     Ft6336* ft6336_;
     LcdDisplay* display_;
     EspVideo* camera_;
+    HeadGimbal* head_gimbal_ = nullptr;
     esp_timer_handle_t touchpad_timer_;
     PowerSaveTimer* power_save_timer_;
     bool manual_sleep_face_ = false;
@@ -406,6 +408,12 @@ public:
         InitializeCamera();
         InitializeFt6336TouchPad();
         GetBacklight()->RestoreBrightness();
+
+        head_gimbal_ = new HeadGimbal(HEAD_GIMBAL_PAN_PIN, HEAD_GIMBAL_TILT_PIN,
+                                      LEDC_TIMER_3, LEDC_CHANNEL_4, LEDC_CHANNEL_5);
+        if (head_gimbal_->IsReady()) {
+            head_gimbal_->RegisterMcpTools();
+        }
     }
 
     virtual AudioCodec* GetAudioCodec() override {
@@ -454,6 +462,25 @@ public:
     virtual Backlight *GetBacklight() override {
         static CustomBacklight backlight(pmic_);
         return &backlight;
+    }
+
+    virtual void OnDeviceStateChanged(DeviceState new_state, DeviceState old_state) override {
+        ESP_LOGI("CoreS3Board", "OnDeviceStateChanged: %d -> %d (gimbal=%s)",
+                 (int)old_state, (int)new_state,
+                 (head_gimbal_ && head_gimbal_->IsReady()) ? "ready" : "not ready");
+        if (new_state != kDeviceStateConnecting || old_state != kDeviceStateIdle) return;
+        if (!head_gimbal_ || !head_gimbal_->IsReady()) return;
+
+        // Run wake-up animation in background so listening starts immediately.
+        BaseType_t ret = xTaskCreate([](void* arg) {
+            auto* gimbal = static_cast<HeadGimbal*>(arg);
+            gimbal->MoveTo(75, 100, 1200);  // look left-down (heavy head drooping)
+            gimbal->MoveTo(105, 95, 1400);  // sweep right, still slightly down
+            gimbal->MoveTo(90, 80, 1000);   // look up toward center
+            gimbal->MoveTo(90, 90, 700);    // settle to center
+            vTaskDelete(nullptr);
+        }, "gimbal_wake", 3072, head_gimbal_, 3, nullptr);
+        ESP_LOGI("CoreS3Board", "gimbal_wake task create: %s", ret == pdPASS ? "OK" : "FAIL");
     }
 };
 

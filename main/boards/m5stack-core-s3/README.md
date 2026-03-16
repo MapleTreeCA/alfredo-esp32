@@ -18,7 +18,7 @@ python ./scripts/release.py m5stack-core-s3
 可通过 SD 卡配置（无需重新 build/烧录）：
 
 - `websocket.url/token/version`
-- `wake_word.commands/display/phonemes/threshold/min_confidence`
+- `wake_word.commands/display/phonemes/threshold/min_confidence`（仅对 Multinet 自定义唤醒词有效；当前使用 Wakenet `wn9_himfive`，此项无实际作用）
 - `conversation.aec_mode`（`off` / `device` / `server`）
 - `conversation.continue_listening_after_tts_stop`
 - `conversation.post_tts_listen_guard_ms`
@@ -40,13 +40,16 @@ python ./scripts/release.py m5stack-core-s3
 - 资源打包（字体/语言包/assets 分区内容）
 - 传感器型号等硬件相关 `sdkconfig` 选项
 
-`wake_word.phonemes` 建议填写。英文词可用 ESP-SR 工具生成：
+**当前唤醒词：`wn9_himfive`（Wakenet，说 "Hi M Five" 唤醒）**
 
-```bash
-/Users/dev/.espressif/python_env/idf5.5_py3.14_env/bin/python \
-  managed_components/espressif__esp-sr/tool/multinet_g2p.py \
-  -t "hi alfredo;hey alfredo"
-```
+> Wakenet 预训练模型无需手工填写音素。
+> 如将来切换回 Multinet 自定义模式，可用以下工具生成音素：
+>
+> ```bash
+> /Users/dev/.espressif/python_env/idf5.5_py3.14_env/bin/python \
+>   managed_components/espressif__esp-sr/tool/multinet_g2p.py \
+>   -t "your wake word here"
+> ```
 
 **烧录**
 

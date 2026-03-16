@@ -145,6 +145,7 @@ private:
     std::string firmware_version_;
     bool pending_resume_listening_ = false;
     bool force_start_turn_on_listening_ = false;
+    DeviceState prev_device_state_ = kDeviceStateUnknown;
     std::atomic<bool> wake_word_ack_in_progress_{false};
     std::atomic<bool> tts_downlink_window_open_{false};
     std::atomic<int64_t> last_tts_audio_at_us_{0};

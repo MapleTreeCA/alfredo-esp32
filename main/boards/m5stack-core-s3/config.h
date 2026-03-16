@@ -41,6 +41,13 @@
 
 
 
+// Head gimbal servo pins
+// Port B pin2 (white) = GPIO9  → pan  (horizontal / shake)
+// Port C pin1 (yellow) = GPIO17 → tilt (vertical   / nod)
+// Set to GPIO_NUM_NC to disable
+#define HEAD_GIMBAL_PAN_PIN  GPIO_NUM_9
+#define HEAD_GIMBAL_TILT_PIN GPIO_NUM_17
+
 /* Camera pins */
 #define CAMERA_PIN_PWDN GPIO_NUM_NC
 #define CAMERA_PIN_RESET GPIO_NUM_NC
