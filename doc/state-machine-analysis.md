@@ -89,7 +89,25 @@
 | Speaking | ON (仅 AFE) | OFF | 播放 TTS 或本地 wake ack，可检测唤醒词打断 |
 | WifiConfiguring | OFF | OFF | 配网模式 |
 
-### 1.5 关键时序参数（设备端）
+### 1.5 状态机相关灯带行为
+
+`M5Stack CoreS3 + M5GO S3` 当前把底座 10 灯环作为状态机相关提示外设，但它不是“每个状态一套常驻灯效”，而是由关键事件触发的一次性提示。
+
+| 触发点 | 代码入口 | 灯带行为 | 停止条件 |
+|--------|----------|---------|---------|
+| 外部电源接入（`VBUS: 0 -> 1`） | `M5StackCoreS3Board::GetBatteryLevel()` → `ChargingStrip::SetExternalPower()` | 10 灯橙色闪烁 10 次 | 10 次完成，或检测到 `VBUS=0` |
+| 唤醒词检测到 | `Application::HandleWakeWordDetectedEvent()` → `Led::OnWakeWordDetected()` | 10 灯橙色闪烁 3 次 | 3 次完成 |
+| 外部电源断开（`VBUS: 1 -> 0`） | `M5StackCoreS3Board::GetBatteryLevel()` → `ChargingStrip::SetExternalPower(false)` | 10 灯熄灭 | 立即 |
+
+补充：
+
+- 硬件对象是 M5GO S3 底座的 `WS2812C x10`，信号线走 `GPIO5`
+- `Port B/Port C` 的舵机口不参与该灯效，当前占用保持不变
+- AXP2101 的 `CHGLED`（主板复位键附近小灯）已显式关闭，不属于状态机灯效
+- `ChargingStrip::OnStateChanged()` 在 CoreS3 板级实现里故意留空，避免 `Idle/Connecting/Listening/Speaking` 的状态切换覆盖一次性提示
+- 外部电源接入判断使用 `IsVbusGood()`，不是 `IsCharging()`；设备带电池时，两者并不等价
+
+### 1.6 关键时序参数（设备端）
 
 | 参数 | 值 | 来源 |
 |------|---|------|
@@ -146,6 +164,7 @@ Gateway 没有显式状态枚举，通过字段组合推断：
   │←── hello response ──────── │
   │                              │
   │  [本地检测唤醒词]              │
+  │  [灯带闪 3 次]                 │
   │  [播放 hi there 本地确认音]    │
   │  [进入 Listening]             │
   │── listen(start, mode=auto)→  │  startTurn(), arm timers
@@ -178,6 +197,7 @@ Gateway 没有显式状态枚举，通过字段组合推断：
 设备 (Speaking 状态)            Gateway (Speaking)
   │                              │
   │  [唤醒词检测到]               │
+  │  [灯带闪 3 次]                │
   │── abort(wake_word_detected)→ │  cancelActive(), tts stop
   │←── tts(stop) ─────────────  │
   │                              │
