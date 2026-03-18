@@ -23,8 +23,9 @@ logs/*
 # IDE
 .idea/
 
-# Claude Code local settings
-.claude/
+# Claude Code local settings (not project skills)
+.claude/settings.local.json
+.claude/worktrees/
 
 # Binaries / installers
 *.dmg
