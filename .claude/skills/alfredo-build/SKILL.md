@@ -43,6 +43,19 @@ This script:
 cd /Users/dev/robot/m5stack/alfredo-esp32
 ```
 
+## Log File
+
+All command output MUST be written to `logs/latest` (overwrite each time, no timestamped files):
+
+```bash
+mkdir -p /Users/dev/robot/m5stack/alfredo-esp32/logs
+# Append each step:  command 2>&1 | tee -a logs/latest
+# Or overwrite:      command 2>&1 | tee logs/latest
+```
+
+Use `tee logs/latest` for the first command of a session (clears old content), then `tee -a logs/latest` for subsequent commands so the full session is in one place.
+After each major step, show the user the last ~10 lines from `logs/latest`.
+
 ## Commands
 
 ### Generate Emoji Assets
@@ -50,7 +63,7 @@ cd /Users/dev/robot/m5stack/alfredo-esp32
 Regenerates all emoji face images from SVGs. Run this whenever SVG files change.
 
 ```bash
-bash /Users/dev/robot/m5stack/alfredo-esp32/scripts/generate_emoji.sh
+bash /Users/dev/robot/m5stack/alfredo-esp32/scripts/generate_emoji.sh 2>&1 | tee logs/latest
 ```
 
 What it does:
@@ -65,17 +78,17 @@ What it does:
 ```bash
 cd /Users/dev/robot/m5stack/alfredo-esp32
 source scripts/export_idf_env.sh
-idf.py build
+idf.py build 2>&1 | tee logs/latest
 ```
 
-Show the last ~10 lines of output to confirm success. Look for "Project build complete".
+Show the last ~10 lines of `logs/latest` to confirm success. Look for "Project build complete".
 
 ### Flash (App + Assets)
 
 ```bash
 cd /Users/dev/robot/m5stack/alfredo-esp32
 source scripts/export_idf_env.sh
-idf.py -p /dev/cu.usbmodem1101 flash
+idf.py -p /dev/cu.usbmodem1101 flash 2>&1 | tee -a logs/latest
 ```
 
 USB port: `/dev/cu.usbmodem1101`. If flash fails with "port not found", ask user to check USB connection. You can check with `ls /dev/cu.usbmodem*`.
@@ -89,7 +102,7 @@ cd /Users/dev/robot/m5stack/alfredo-esp32
 source scripts/export_idf_env.sh
 python -m esptool --chip esp32s3 -p /dev/cu.usbmodem1101 -b 460800 \
   --before default_reset --after hard_reset \
-  write_flash 0x800000 build/generated_assets.bin
+  write_flash 0x800000 build/generated_assets.bin 2>&1 | tee -a logs/latest
 ```
 
 ### Monitor Serial Output
@@ -97,7 +110,7 @@ python -m esptool --chip esp32s3 -p /dev/cu.usbmodem1101 -b 460800 \
 ```bash
 cd /Users/dev/robot/m5stack/alfredo-esp32
 source scripts/export_idf_env.sh
-idf.py -p /dev/cu.usbmodem1101 monitor
+idf.py -p /dev/cu.usbmodem1101 monitor 2>&1 | tee -a logs/latest
 ```
 
 Exit with `Ctrl+]`. Use timeout to avoid hanging indefinitely.
@@ -108,10 +121,10 @@ When user says "全部重来", "从头编译", or wants the complete pipeline:
 
 ```bash
 cd /Users/dev/robot/m5stack/alfredo-esp32
-bash scripts/generate_emoji.sh
+bash scripts/generate_emoji.sh 2>&1 | tee logs/latest
 source scripts/export_idf_env.sh
-idf.py build
-idf.py -p /dev/cu.usbmodem1101 flash
+idf.py build 2>&1 | tee -a logs/latest
+idf.py -p /dev/cu.usbmodem1101 flash 2>&1 | tee -a logs/latest
 ```
 
 ### Clean Rebuild
@@ -121,9 +134,9 @@ When build is corrupted or target needs resetting:
 ```bash
 cd /Users/dev/robot/m5stack/alfredo-esp32
 source scripts/export_idf_env.sh
-idf.py fullclean
-idf.py set-target esp32s3
-idf.py build
+idf.py fullclean 2>&1 | tee logs/latest
+idf.py set-target esp32s3 2>&1 | tee -a logs/latest
+idf.py build 2>&1 | tee -a logs/latest
 ```
 
 ## Emoji Pipeline Details
