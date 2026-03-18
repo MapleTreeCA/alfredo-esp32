@@ -1,0 +1,8 @@
+<svg viewBox="0 0 128 128" aria-hidden="true">
+  <rect x="18" y="50" width="7" height="4" fill="#39ff14"/>
+  <polyline points="105,48 98,52 105,56" stroke="#39ff14" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <g class="mouth">
+    <path d="M50 89c6 8 20 9 28 2" stroke="#39ff14" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>

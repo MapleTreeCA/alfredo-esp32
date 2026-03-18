@@ -1,0 +1,13 @@
+dependencies:
+  idf: '>=5.3'
+description: LVGL fonts for Alfredo ESP32
+files:
+  exclude:
+  - .git
+  - dist
+  - build
+  - fonts
+  - __pycache__
+  - tmp
+license: MIT
+version: 1.6.0

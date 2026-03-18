@@ -1,0 +1,20 @@
+<svg viewBox="0 0 128 128" aria-hidden="true">
+  <g class="eyes">
+    <path d="M 14 52 Q 21.5 58 29 52" fill="none" stroke="#39ff14" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 94 52 Q 101.5 58 109 52" fill="none" stroke="#39ff14" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <g class="blush" stroke="#39ff14" stroke-width="1.5" stroke-linecap="round">
+    <line x1="14" y1="64" x2="19" y2="59" />
+    <line x1="19" y1="64" x2="24" y2="59" />
+    <line x1="24" y1="64" x2="29" y2="59" />
+    
+    <line x1="94" y1="64" x2="99" y2="59" />
+    <line x1="99" y1="64" x2="104" y2="59" />
+    <line x1="104" y1="64" x2="109" y2="59" />
+  </g>
+
+  <g class="mouth">
+    <path d="M 54 94 Q 59 90 64 94 T 74 94" fill="none" stroke="#39ff14" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>
