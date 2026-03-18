@@ -7,9 +7,11 @@
 #include "i2c_device.h"
 #include "axp2101.h"
 #include "head_gimbal.h"
+#include "led/circular_strip.h"
 
 #include <esp_log.h>
 #include <driver/i2c_master.h>
+#include <esp_rom_sys.h>
 #include <esp_lcd_panel_io.h>
 #include <esp_lcd_panel_ops.h>
 #include <esp_lcd_ili9341.h>
@@ -20,6 +22,91 @@
 
 #define TAG "M5StackCoreS3Board"
 
+namespace {
+constexpr uint16_t ComposeNecCode(uint8_t command) {
+    return (static_cast<uint16_t>(command) << 8) | static_cast<uint8_t>(~command);
+}
+
+class IrNecTransmitter {
+public:
+    explicit IrNecTransmitter(gpio_num_t gpio) : gpio_(gpio) {
+        gpio_config_t config = {};
+        config.pin_bit_mask = 1ULL << gpio_;
+        config.mode = GPIO_MODE_OUTPUT;
+        config.pull_down_en = GPIO_PULLDOWN_DISABLE;
+        config.pull_up_en = GPIO_PULLUP_DISABLE;
+        config.intr_type = GPIO_INTR_DISABLE;
+        ESP_ERROR_CHECK(gpio_config(&config));
+        gpio_set_level(gpio_, 0);
+    }
+
+    void SendNec(uint16_t address, uint8_t command) const {
+        SendNecFrame(address, ComposeNecCode(command));
+    }
+
+    void SendNecFrame(uint16_t address, uint16_t code) const {
+        const uint8_t address_high = static_cast<uint8_t>((address >> 8) & 0xFF);
+        const uint8_t address_low = static_cast<uint8_t>(address & 0xFF);
+        const uint8_t code_high = static_cast<uint8_t>((code >> 8) & 0xFF);
+        const uint8_t code_low = static_cast<uint8_t>(code & 0xFF);
+        SendLeader();
+        SendByte(address_high);
+        SendByte(address_low);
+        SendByte(code_high);
+        SendByte(code_low);
+        SendMark(kBitMarkUs);
+        SendSpace(0);
+    }
+
+private:
+    static constexpr uint32_t kCarrierHighUs = 13;
+    static constexpr uint32_t kCarrierLowUs = 13;
+    static constexpr uint32_t kLeaderMarkUs = 9000;
+    static constexpr uint32_t kLeaderSpaceUs = 4500;
+    static constexpr uint32_t kBitMarkUs = 560;
+    static constexpr uint32_t kZeroSpaceUs = 560;
+    static constexpr uint32_t kOneSpaceUs = 1690;
+
+    gpio_num_t gpio_;
+
+    void SendLeader() const {
+        SendMark(kLeaderMarkUs);
+        SendSpace(kLeaderSpaceUs);
+    }
+
+    void SendByte(uint8_t value) const {
+        for (int bit = 0; bit < 8; ++bit) {
+            const bool is_one = (value >> bit) & 0x01;
+            SendMark(kBitMarkUs);
+            SendSpace(is_one ? kOneSpaceUs : kZeroSpaceUs);
+        }
+    }
+
+    void SendMark(uint32_t duration_us) const {
+        uint32_t elapsed_us = 0;
+        while (elapsed_us + kCarrierHighUs + kCarrierLowUs <= duration_us) {
+            gpio_set_level(gpio_, 1);
+            esp_rom_delay_us(kCarrierHighUs);
+            gpio_set_level(gpio_, 0);
+            esp_rom_delay_us(kCarrierLowUs);
+            elapsed_us += kCarrierHighUs + kCarrierLowUs;
+        }
+        if (elapsed_us < duration_us) {
+            gpio_set_level(gpio_, 1);
+            esp_rom_delay_us(duration_us - elapsed_us);
+            gpio_set_level(gpio_, 0);
+        }
+    }
+
+    void SendSpace(uint32_t duration_us) const {
+        gpio_set_level(gpio_, 0);
+        if (duration_us > 0) {
+            esp_rom_delay_us(duration_us);
+        }
+    }
+};
+}  // namespace
+
 class Pmic : public Axp2101 {
 public:
     // Power Init
@@ -29,7 +116,7 @@ public:
         WriteReg(0x90, data);
         WriteReg(0x99, (0b11110 - 5));
         WriteReg(0x97, (0b11110 - 2));
-        WriteReg(0x69, 0b00110101);
+        WriteReg(0x69, 0b00000100); // disable CHGLED pin; keep PMIC LED dark
         WriteReg(0x30, 0b111111);
         WriteReg(0x90, 0xBF);
         WriteReg(0x94, 33 - 5);
@@ -40,6 +127,7 @@ public:
         brightness = ((brightness + 641) >> 5);
         WriteReg(0x99, brightness);
     }
+
 };
 
 class CustomBacklight : public Backlight {
@@ -119,6 +207,39 @@ private:
     TouchPoint_t tp_;
 };
 
+class ChargingStrip : public CircularStrip {
+public:
+    ChargingStrip(gpio_num_t gpio, uint16_t max_leds)
+        : CircularStrip(gpio, max_leds) {
+    }
+
+    void OnWakeWordDetected() override {
+        BlinkTimes(kIndicatorColor, kBlinkIntervalMs, 3);
+    }
+
+    void SetExternalPower(bool external_power) {
+        if (external_power_ == external_power) {
+            return;
+        }
+        external_power_ = external_power;
+        if (external_power_) {
+            BlinkTimes(kIndicatorColor, kBlinkIntervalMs, 10);
+            return;
+        }
+        SetAllColor({0, 0, 0});
+    }
+
+    void OnStateChanged() override {
+        // Power and wake indications are one-shot events; device state changes
+        // should not restart them.
+    }
+
+private:
+    bool external_power_ = false;
+    static constexpr StripColor kIndicatorColor = {32, 12, 0};
+    static constexpr int kBlinkIntervalMs = 200;
+};
+
 class M5StackCoreS3Board : public WifiBoard {
 private:
     i2c_master_bus_handle_t i2c_bus_;
@@ -127,10 +248,30 @@ private:
     Ft6336* ft6336_;
     LcdDisplay* display_;
     EspVideo* camera_;
+    ChargingStrip* charging_strip_ = nullptr;
     HeadGimbal* head_gimbal_ = nullptr;
     esp_timer_handle_t touchpad_timer_;
     PowerSaveTimer* power_save_timer_;
     bool manual_sleep_face_ = false;
+    bool external_power_connected_ = false;
+
+    void ApplyExternalPowerState(bool external_power, bool force = false) {
+        if (!force && external_power_connected_ == external_power) {
+            return;
+        }
+
+        external_power_connected_ = external_power;
+        ESP_LOGI(TAG, "External power %s, auto sleep/shutdown %s",
+                 external_power_connected_ ? "connected" : "disconnected",
+                 external_power_connected_ ? "disabled" : "enabled");
+
+        if (power_save_timer_ != nullptr) {
+            power_save_timer_->SetEnabled(!external_power_connected_);
+        }
+        if (charging_strip_ != nullptr) {
+            charging_strip_->SetExternalPower(external_power_connected_);
+        }
+    }
 
     void InitializePowerSaveTimer() {
         power_save_timer_ = new PowerSaveTimer(-1, 60, 300);
@@ -145,7 +286,7 @@ private:
         power_save_timer_->OnShutdownRequest([this]() {
             pmic_->PowerOff();
         });
-        power_save_timer_->SetEnabled(true);
+        ApplyExternalPowerState(pmic_->IsVbusGood(), true);
     }
 
     void InitializeI2c() {
@@ -189,12 +330,40 @@ private:
     void InitializeAxp2101() {
         ESP_LOGI(TAG, "Init AXP2101");
         pmic_ = new Pmic(i2c_bus_, 0x34);
+        ESP_LOGI(TAG, "AXP2101 vbus_good=%d battery_present=%d charging=%d discharging=%d",
+                 pmic_->IsVbusGood(), pmic_->IsBatteryPresent(),
+                 pmic_->IsCharging(), pmic_->IsDischarging());
+    }
+
+    void InitializeChargingStrip() {
+        ESP_LOGI(TAG, "Init M5GO RGB strip on GPIO%d (%d LEDs)", M5GO_RGB_LED_GPIO, M5GO_RGB_LED_COUNT);
+        charging_strip_ = new ChargingStrip(M5GO_RGB_LED_GPIO, M5GO_RGB_LED_COUNT);
+        ApplyExternalPowerState(external_power_connected_, true);
     }
 
     void InitializeAw9523() {
         ESP_LOGI(TAG, "Init AW9523");
         aw9523_ = new Aw9523(i2c_bus_, 0x58);
         vTaskDelay(pdMS_TO_TICKS(50));
+    }
+
+    void SendProjectorNecFrameInternal(const char* reason,
+                                       uint16_t address,
+                                       uint16_t code) {
+        ESP_LOGI(TAG,
+                 "%s projector NEC frame on GPIO%d: address=0x%04X code=0x%04X count=%d",
+                 reason,
+                 static_cast<int>(M5GO_IR_LED_GPIO),
+                 address,
+                 code,
+                 PROJECTOR_IR_AUTO_SEND_COUNT);
+        IrNecTransmitter transmitter(M5GO_IR_LED_GPIO);
+        for (int attempt = 0; attempt < PROJECTOR_IR_AUTO_SEND_COUNT; ++attempt) {
+            transmitter.SendNecFrame(address, code);
+            if (attempt + 1 < PROJECTOR_IR_AUTO_SEND_COUNT) {
+                vTaskDelay(pdMS_TO_TICKS(PROJECTOR_IR_AUTO_SEND_GAP_MS));
+            }
+        }
     }
 
     void PollTouchpad() {
@@ -256,6 +425,10 @@ private:
         }
 
         power_save_timer_->WakeUp();
+
+        if (auto* display = GetDisplay(); display != nullptr && display->HandleTap(x, y)) {
+            return;
+        }
 
         if (app.GetDeviceState() == kDeviceStateStarting) {
             EnterWifiConfigMode();
@@ -398,9 +571,10 @@ private:
 
 public:
     M5StackCoreS3Board() {
-        InitializePowerSaveTimer();
         InitializeI2c();
         InitializeAxp2101();
+        InitializePowerSaveTimer();
+        InitializeChargingStrip();
         InitializeAw9523();
         I2cDetect();
         InitializeSpi();
@@ -439,13 +613,47 @@ public:
         return camera_;
     }
 
+    virtual bool SendProjectorPowerCode() override {
+        SendProjectorNecFrameInternal("Manual-sending", PROJECTOR_IR_NEC_ADDRESS,
+                                      ComposeNecCode(PROJECTOR_IR_NEC_COMMAND));
+        return true;
+    }
+
+    virtual bool SendProjectorPowerCode(uint16_t address) override {
+        SendProjectorNecFrameInternal("Manual-sending", address,
+                                      ComposeNecCode(PROJECTOR_IR_NEC_COMMAND));
+        return true;
+    }
+
+    virtual bool SendProjectorNecFrame(uint16_t address, uint16_t code) override {
+        SendProjectorNecFrameInternal("Manual-sending", address, code);
+        return true;
+    }
+
+    virtual bool SendProjectorNecCode(uint16_t address, uint8_t command) override {
+        SendProjectorNecFrameInternal("Manual-sending", address, ComposeNecCode(command));
+        return true;
+    }
+
+    virtual Led* GetLed() override {
+        if (charging_strip_ != nullptr) {
+            return charging_strip_;
+        }
+        return Board::GetLed();
+    }
+
     virtual bool GetBatteryLevel(int &level, bool& charging, bool& discharging) override {
-        static bool last_discharging = false;
+        static bool last_charging = !pmic_->IsCharging(); // force sync on first call
+        static bool last_vbus_good = !pmic_->IsVbusGood(); // force sync on first call
         charging = pmic_->IsCharging();
         discharging = pmic_->IsDischarging();
-        if (discharging != last_discharging) {
-            power_save_timer_->SetEnabled(discharging);
-            last_discharging = discharging;
+        bool vbus_good = pmic_->IsVbusGood();
+        if (vbus_good != last_vbus_good) {
+            ApplyExternalPowerState(vbus_good);
+            last_vbus_good = vbus_good;
+        }
+        if (charging != last_charging) {
+            last_charging = charging;
         }
 
         level = pmic_->GetBatteryLevel();

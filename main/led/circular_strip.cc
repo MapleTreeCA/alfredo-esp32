@@ -82,8 +82,7 @@ void CircularStrip::Blink(StripColor color, int interval_ms) {
     for (int i = 0; i < max_leds_; i++) {
         colors_[i] = color;
     }
-    StartStripTask(interval_ms, [this]() {
-        static bool on = true;
+    StartStripTask(interval_ms, [this, on = true]() mutable {
         if (on) {
             for (int i = 0; i < max_leds_; i++) {
                 led_strip_set_pixel(led_strip_, i, colors_[i].red, colors_[i].green, colors_[i].blue);
@@ -94,6 +93,49 @@ void CircularStrip::Blink(StripColor color, int interval_ms) {
         }
         on = !on;
     });
+}
+
+void CircularStrip::BlinkTimes(StripColor color, int interval_ms, int blink_count) {
+    if (blink_count <= 0) {
+        SetAllColor({0, 0, 0});
+        return;
+    }
+
+    for (int i = 0; i < max_leds_; i++) {
+        colors_[i] = color;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        esp_timer_stop(strip_timer_);
+        for (int i = 0; i < max_leds_; i++) {
+            led_strip_set_pixel(led_strip_, i, color.red, color.green, color.blue);
+        }
+        led_strip_refresh(led_strip_);
+
+        int transitions_remaining = blink_count * 2 - 1;
+        strip_callback_ = [this, on = true, transitions_remaining]() mutable {
+            on = !on;
+            if (on) {
+                for (int i = 0; i < max_leds_; i++) {
+                    led_strip_set_pixel(led_strip_, i, colors_[i].red, colors_[i].green, colors_[i].blue);
+                }
+                led_strip_refresh(led_strip_);
+            } else {
+                led_strip_clear(led_strip_);
+            }
+
+            transitions_remaining--;
+            if (transitions_remaining <= 0) {
+                led_strip_clear(led_strip_);
+                // Don't clear strip_callback_ from inside itself. The std::function
+                // owns the active lambda, so resetting it here can destroy the
+                // currently executing closure before esp_timer_stop() runs.
+                esp_timer_stop(strip_timer_);
+            }
+        };
+        esp_timer_start_periodic(strip_timer_, interval_ms * 1000);
+    }
 }
 
 void CircularStrip::FadeOut(int interval_ms) {

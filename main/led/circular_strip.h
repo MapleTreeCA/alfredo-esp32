@@ -27,6 +27,7 @@ public:
     void SetSingleColor(uint8_t index, StripColor color);
     void SetMultiColors(const std::vector<StripColor>& colors);
     void Blink(StripColor color, int interval_ms);
+    void BlinkTimes(StripColor color, int interval_ms, int blink_count);
     void Breathe(StripColor low, StripColor high, int interval_ms);
     void Scroll(StripColor low, StripColor high, int length, int interval_ms);
 

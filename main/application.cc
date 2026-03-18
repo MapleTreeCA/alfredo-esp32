@@ -1303,6 +1303,8 @@ void Application::HandleWakeWordDetectedEvent() {
         return;
     }
 
+    board.GetLed()->OnWakeWordDetected();
+
     if (state == kDeviceStateIdle) {
         audio_service_.EncodeWakeWord();
         auto wake_word = audio_service_.GetLastWakeWord();
@@ -1523,7 +1525,7 @@ const char* Application::ResolveFaceForState(DeviceState state) const {
         case kDeviceStateAudioTesting:
             return "listening";
         case kDeviceStateSpeaking:
-            return wake_word_ack_in_progress_.load(std::memory_order_acquire) ? "happy" : nullptr;
+            return wake_word_ack_in_progress_.load(std::memory_order_acquire) ? "wakeup2" : nullptr;
         case kDeviceStateFatalError:
             return "grieved";
         default:

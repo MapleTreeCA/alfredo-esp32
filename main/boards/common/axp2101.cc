@@ -9,6 +9,14 @@
 Axp2101::Axp2101(i2c_master_bus_handle_t i2c_bus, uint8_t addr) : I2cDevice(i2c_bus, addr) {
 }
 
+bool Axp2101::IsVbusGood() {
+    return (ReadReg(0x00) & 0b00100000) != 0;
+}
+
+bool Axp2101::IsBatteryPresent() {
+    return (ReadReg(0x00) & 0b00001000) != 0;
+}
+
 int Axp2101::GetBatteryCurrentDirection() {
     return (ReadReg(0x01) & 0b01100000) >> 5;
 }

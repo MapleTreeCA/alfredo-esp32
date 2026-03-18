@@ -12,10 +12,9 @@
 #include <esp_err.h>
 #include <esp_lvgl_port.h>
 #include <esp_psram.h>
+#include <cstdio>
 #include <cstring>
 #include <src/misc/cache/lv_cache.h>
-
-#include "board.h"
 
 #define TAG "LcdDisplay"
 
@@ -23,7 +22,33 @@ namespace {
 constexpr int kEmojiFillPercent = 80;
 constexpr uint64_t kSpeakingAnimationIntervalUs = 220 * 1000;
 constexpr const char* kSpeakingEmotionSuffix = "_speaking";
-constexpr const char* kSleepOverlayText = "zZz";
+// Sleep animation: cycle through sleeping0 → sleeping3
+static constexpr const char* kSleepFrames[] = {"sleeping0", "sleeping1", "sleeping2", "sleeping3"};
+static constexpr int kSleepFrameCount = 4;
+static constexpr int kSleepFrameIntervalMs = 1500;
+
+// Idle animation: calm (long) → wink (short), loop
+struct IdleFrame {
+    const char* emotion;
+    int duration_ms;
+};
+static constexpr IdleFrame kIdleFrames[] = {
+    {"neutral", 5000},   // calm, show longer
+    {"winking", 800},    // wink, show briefly
+};
+static constexpr int kIdleFrameCount = sizeof(kIdleFrames) / sizeof(kIdleFrames[0]);
+
+// Wakeup animation: wakeup1 → wakeup2 loop during wake ack speaking
+static constexpr IdleFrame kWakeupFrames[] = {
+    {"wakeup1", 600},    // groggy, brief
+    {"wakeup2", 400},    // happy awake, brief
+};
+static constexpr int kWakeupFrameCount = sizeof(kWakeupFrames) / sizeof(kWakeupFrames[0]);
+
+// Listening animation: listening1 → listening2 → listening3 (sound wave expanding)
+static constexpr const char* kListeningFrames[] = {"listening1", "listening2", "listening3"};
+static constexpr int kListeningFrameCount = 3;
+static constexpr int kListeningFrameIntervalMs = 500;
 }
 
 LV_FONT_DECLARE(BUILTIN_TEXT_FONT);
@@ -333,9 +358,6 @@ LcdDisplay::~LcdDisplay() {
     if (emoji_image_ != nullptr) {
         lv_obj_del(emoji_image_);
     }
-    if (sleep_zzz_label_ != nullptr) {
-        lv_obj_del(sleep_zzz_label_);
-    }
     if (emoji_box_ != nullptr) {
         lv_obj_del(emoji_box_);
     }
@@ -401,24 +423,8 @@ const LvglImage* LcdDisplay::FindThemeEmojiImageLocked(const char* emotion) {
 }
 
 void LcdDisplay::UpdateSleepOverlayLocked() {
-    if (sleep_zzz_label_ == nullptr) {
-        return;
-    }
-
-    bool show_overlay = power_save_mode_ &&
-        (current_emotion_ == "sleepy" || current_emotion_ == "sleeping");
-    if (preview_image_ != nullptr && !lv_obj_has_flag(preview_image_, LV_OBJ_FLAG_HIDDEN)) {
-        show_overlay = false;
-    }
-    if (emoji_box_ != nullptr && lv_obj_has_flag(emoji_box_, LV_OBJ_FLAG_HIDDEN)) {
-        show_overlay = false;
-    }
-
-    if (show_overlay) {
-        lv_obj_remove_flag(sleep_zzz_label_, LV_OBJ_FLAG_HIDDEN);
-    } else {
-        lv_obj_add_flag(sleep_zzz_label_, LV_OBJ_FLAG_HIDDEN);
-    }
+    // Sleep animation is now handled by the sleep animation timer
+    // This function is kept for compatibility but does nothing
 }
 
 void LcdDisplay::AdjustEmojiBoxForSubtitleLocked(bool subtitle_visible) {
@@ -476,13 +482,12 @@ void LcdDisplay::UpdateSpeakingAnimation() {
         return;
     }
 
-    bool is_speaking = Application::GetInstance().GetDeviceState() == kDeviceStateSpeaking;
-    bool is_wake_word_ack = Application::GetInstance().IsWakeWordAckInProgress();
-    if (is_speaking && is_wake_word_ack && !gif_controller_) {
-        speaking_animation_frame_ = !speaking_animation_frame_;
-        UpdateEmojiVisualLocked(speaking_animation_frame_ ? "neutral" : "happy");
+    // Wakeup animation is handled by wakeup_anim_timer_, skip speaking animation
+    if (wakeup_anim_timer_ != nullptr) {
         return;
     }
+
+    bool is_speaking = Application::GetInstance().GetDeviceState() == kDeviceStateSpeaking;
 
     if (!is_speaking || !current_emotion_has_speaking_variant_ || gif_controller_) {
         if (!speaking_animation_frame_) {
@@ -647,13 +652,6 @@ void LcdDisplay::SetupUI() {
     lv_obj_set_style_text_color(emoji_label_, lvgl_theme->text_color(), 0);
     lv_label_set_text(emoji_label_, FONT_AWESOME_MICROCHIP_AI);
 
-    sleep_zzz_label_ = lv_label_create(screen);
-    lv_label_set_text(sleep_zzz_label_, kSleepOverlayText);
-    lv_obj_set_style_text_font(sleep_zzz_label_, text_font, 0);
-    lv_obj_set_style_text_color(sleep_zzz_label_, lvgl_theme->text_color(), 0);
-    lv_obj_set_style_text_opa(sleep_zzz_label_, LV_OPA_80, 0);
-    lv_obj_align(sleep_zzz_label_, LV_ALIGN_TOP_RIGHT, -lvgl_theme->spacing(10), text_font->line_height * 2);
-    lv_obj_add_flag(sleep_zzz_label_, LV_OBJ_FLAG_HIDDEN);
 
 }
 #if CONFIG_IDF_TARGET_ESP32P4
@@ -1007,14 +1005,6 @@ void LcdDisplay::SetupUI() {
     lv_obj_center(emoji_image_);
     lv_obj_add_flag(emoji_image_, LV_OBJ_FLAG_HIDDEN);
 
-    sleep_zzz_label_ = lv_label_create(screen);
-    lv_label_set_text(sleep_zzz_label_, kSleepOverlayText);
-    lv_obj_set_style_text_font(sleep_zzz_label_, text_font, 0);
-    lv_obj_set_style_text_color(sleep_zzz_label_, lvgl_theme->text_color(), 0);
-    lv_obj_set_style_text_opa(sleep_zzz_label_, LV_OPA_80, 0);
-    lv_obj_align(sleep_zzz_label_, LV_ALIGN_TOP_RIGHT, -lvgl_theme->spacing(10), text_font->line_height * 2);
-    lv_obj_add_flag(sleep_zzz_label_, LV_OBJ_FLAG_HIDDEN);
-
     /* Middle layer: preview_image_ - centered display */
     preview_image_ = lv_image_create(screen);
     lv_obj_set_size(preview_image_, width_ / 2, height_ / 2);
@@ -1215,6 +1205,12 @@ void LcdDisplay::ClearChatMessages() {
 }
 #endif
 
+bool LcdDisplay::HandleTap(int x, int y) {
+    (void)x;
+    (void)y;
+    return false;
+}
+
 void LcdDisplay::SetEmotion(const char* emotion) {
     if (!setup_ui_called_) {
         ESP_LOGW(TAG, "SetEmotion('%s') called before SetupUI() - emotion will not be displayed!", emotion);
@@ -1227,13 +1223,40 @@ void LcdDisplay::SetEmotion(const char* emotion) {
         return;
     }
 
+    // Manage animations based on emotion
+    std::string resolved = (emotion != nullptr && emotion[0] != '\0') ? emotion : "neutral";
+
+    if (resolved == "neutral" && !power_save_mode_) {
+        StopWakeupAnimation();
+        StopListeningAnimation();
+        StartIdleAnimation();
+        return;
+    } else {
+        StopIdleAnimation();
+    }
+
+    if (resolved == "wakeup2") {
+        StopListeningAnimation();
+        StartWakeupAnimation();
+        return;
+    } else {
+        StopWakeupAnimation();
+    }
+
+    if (resolved == "listening") {
+        StartListeningAnimation();
+        return;
+    } else {
+        StopListeningAnimation();
+    }
+
     DisplayLockGuard lock(this);
     if (gif_controller_) {
         gif_controller_->Stop();
         gif_controller_.reset();
     }
 
-    current_emotion_ = (emotion != nullptr && emotion[0] != '\0') ? emotion : "neutral";
+    current_emotion_ = resolved;
     speaking_animation_frame_ = false;
 
     std::string speaking_emotion = current_emotion_ + kSpeakingEmotionSuffix;
@@ -1271,8 +1294,185 @@ void LcdDisplay::SetPowerSaveMode(bool on) {
     power_save_mode_ = on;
     LvglDisplay::SetPowerSaveMode(on);
 
-    DisplayLockGuard lock(this);
-    UpdateSleepOverlayLocked();
+    if (on) {
+        StartSleepAnimation();
+    } else {
+        StopSleepAnimation();
+    }
+}
+
+void LcdDisplay::StartSleepAnimation() {
+    if (sleep_anim_timer_ != nullptr) {
+        return;  // Already running
+    }
+    sleep_anim_frame_ = 0;
+
+    // Show the first frame immediately
+    {
+        DisplayLockGuard lock(this);
+        UpdateEmojiVisualLocked(kSleepFrames[0]);
+    }
+
+    esp_timer_create_args_t timer_args = {
+        .callback = [](void* arg) {
+            auto* self = static_cast<LcdDisplay*>(arg);
+            self->sleep_anim_frame_ = (self->sleep_anim_frame_ + 1) % kSleepFrameCount;
+            DisplayLockGuard lock(self);
+            self->UpdateEmojiVisualLocked(kSleepFrames[self->sleep_anim_frame_]);
+        },
+        .arg = this,
+        .dispatch_method = ESP_TIMER_TASK,
+        .name = "sleep_anim",
+        .skip_unhandled_events = true,
+    };
+    ESP_ERROR_CHECK(esp_timer_create(&timer_args, &sleep_anim_timer_));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(sleep_anim_timer_, kSleepFrameIntervalMs * 1000));
+}
+
+void LcdDisplay::StopSleepAnimation() {
+    if (sleep_anim_timer_ == nullptr) {
+        return;
+    }
+    esp_timer_stop(sleep_anim_timer_);
+    esp_timer_delete(sleep_anim_timer_);
+    sleep_anim_timer_ = nullptr;
+}
+
+void LcdDisplay::StartIdleAnimation() {
+    if (idle_anim_timer_ != nullptr) {
+        return;  // Already running
+    }
+    idle_anim_frame_ = 0;
+
+    // Show the first frame (neutral/calm) immediately
+    {
+        DisplayLockGuard lock(this);
+        current_emotion_ = kIdleFrames[0].emotion;
+        UpdateEmojiVisualLocked(kIdleFrames[0].emotion);
+    }
+
+    esp_timer_create_args_t timer_args = {
+        .callback = [](void* arg) {
+            auto* self = static_cast<LcdDisplay*>(arg);
+            self->AdvanceIdleFrame();
+        },
+        .arg = this,
+        .dispatch_method = ESP_TIMER_TASK,
+        .name = "idle_anim",
+        .skip_unhandled_events = true,
+    };
+    ESP_ERROR_CHECK(esp_timer_create(&timer_args, &idle_anim_timer_));
+    // Start with the duration of the first frame
+    ESP_ERROR_CHECK(esp_timer_start_once(idle_anim_timer_, kIdleFrames[0].duration_ms * 1000ULL));
+}
+
+void LcdDisplay::AdvanceIdleFrame() {
+    idle_anim_frame_ = (idle_anim_frame_ + 1) % kIdleFrameCount;
+    const auto& frame = kIdleFrames[idle_anim_frame_];
+
+    {
+        DisplayLockGuard lock(this);
+        current_emotion_ = frame.emotion;
+        UpdateEmojiVisualLocked(frame.emotion);
+    }
+
+    // Schedule the next frame with this frame's duration
+    ESP_ERROR_CHECK(esp_timer_start_once(idle_anim_timer_, frame.duration_ms * 1000ULL));
+}
+
+void LcdDisplay::StopIdleAnimation() {
+    if (idle_anim_timer_ == nullptr) {
+        return;
+    }
+    esp_timer_stop(idle_anim_timer_);
+    esp_timer_delete(idle_anim_timer_);
+    idle_anim_timer_ = nullptr;
+}
+
+void LcdDisplay::StartWakeupAnimation() {
+    if (wakeup_anim_timer_ != nullptr) {
+        return;  // Already running
+    }
+    wakeup_anim_frame_ = 0;
+
+    // Show the first frame immediately
+    {
+        DisplayLockGuard lock(this);
+        current_emotion_ = kWakeupFrames[0].emotion;
+        UpdateEmojiVisualLocked(kWakeupFrames[0].emotion);
+    }
+
+    esp_timer_create_args_t timer_args = {
+        .callback = [](void* arg) {
+            auto* self = static_cast<LcdDisplay*>(arg);
+            self->AdvanceWakeupFrame();
+        },
+        .arg = this,
+        .dispatch_method = ESP_TIMER_TASK,
+        .name = "wakeup_anim",
+        .skip_unhandled_events = true,
+    };
+    ESP_ERROR_CHECK(esp_timer_create(&timer_args, &wakeup_anim_timer_));
+    ESP_ERROR_CHECK(esp_timer_start_once(wakeup_anim_timer_, kWakeupFrames[0].duration_ms * 1000ULL));
+}
+
+void LcdDisplay::AdvanceWakeupFrame() {
+    wakeup_anim_frame_ = (wakeup_anim_frame_ + 1) % kWakeupFrameCount;
+    const auto& frame = kWakeupFrames[wakeup_anim_frame_];
+
+    {
+        DisplayLockGuard lock(this);
+        current_emotion_ = frame.emotion;
+        UpdateEmojiVisualLocked(frame.emotion);
+    }
+
+    ESP_ERROR_CHECK(esp_timer_start_once(wakeup_anim_timer_, frame.duration_ms * 1000ULL));
+}
+
+void LcdDisplay::StopWakeupAnimation() {
+    if (wakeup_anim_timer_ == nullptr) {
+        return;
+    }
+    esp_timer_stop(wakeup_anim_timer_);
+    esp_timer_delete(wakeup_anim_timer_);
+    wakeup_anim_timer_ = nullptr;
+}
+
+void LcdDisplay::StartListeningAnimation() {
+    if (listening_anim_timer_ != nullptr) {
+        return;  // Already running
+    }
+    listening_anim_frame_ = 0;
+
+    // Show the first frame immediately
+    {
+        DisplayLockGuard lock(this);
+        UpdateEmojiVisualLocked(kListeningFrames[0]);
+    }
+
+    esp_timer_create_args_t timer_args = {
+        .callback = [](void* arg) {
+            auto* self = static_cast<LcdDisplay*>(arg);
+            self->listening_anim_frame_ = (self->listening_anim_frame_ + 1) % kListeningFrameCount;
+            DisplayLockGuard lock(self);
+            self->UpdateEmojiVisualLocked(kListeningFrames[self->listening_anim_frame_]);
+        },
+        .arg = this,
+        .dispatch_method = ESP_TIMER_TASK,
+        .name = "listen_anim",
+        .skip_unhandled_events = true,
+    };
+    ESP_ERROR_CHECK(esp_timer_create(&timer_args, &listening_anim_timer_));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(listening_anim_timer_, kListeningFrameIntervalMs * 1000));
+}
+
+void LcdDisplay::StopListeningAnimation() {
+    if (listening_anim_timer_ == nullptr) {
+        return;
+    }
+    esp_timer_stop(listening_anim_timer_);
+    esp_timer_delete(listening_anim_timer_);
+    listening_anim_timer_ = nullptr;
 }
 
 void LcdDisplay::SetTheme(Theme* theme) {
@@ -1323,11 +1523,6 @@ void LcdDisplay::SetTheme(Theme* theme) {
     lv_obj_set_style_text_color(mute_label_, lvgl_theme->text_color(), 0);
     lv_obj_set_style_text_color(battery_label_, lvgl_theme->text_color(), 0);
     lv_obj_set_style_text_color(emoji_label_, lvgl_theme->text_color(), 0);
-    if (sleep_zzz_label_ != nullptr) {
-        lv_obj_set_style_text_font(sleep_zzz_label_, text_font, 0);
-        lv_obj_set_style_text_color(sleep_zzz_label_, lvgl_theme->text_color(), 0);
-        lv_obj_align(sleep_zzz_label_, LV_ALIGN_TOP_RIGHT, -lvgl_theme->spacing(10), text_font->line_height * 2);
-    }
 
     // If we have the chat message style, update all message bubbles
 #if CONFIG_USE_WECHAT_MESSAGE_STYLE

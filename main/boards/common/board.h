@@ -82,6 +82,21 @@ public:
     virtual void SetPowerSaveLevel(PowerSaveLevel level) = 0;
     virtual std::string GetBoardJson() = 0;
     virtual std::string GetDeviceStatusJson() = 0;
+    virtual bool SendProjectorNecFrame(uint16_t address, uint16_t code) {
+        (void)address;
+        (void)code;
+        return false;
+    }
+    virtual bool SendProjectorNecCode(uint16_t address, uint8_t command) {
+        (void)address;
+        (void)command;
+        return false;
+    }
+    virtual bool SendProjectorPowerCode(uint16_t address) {
+        (void)address;
+        return false;
+    }
+    virtual bool SendProjectorPowerCode() { return false; }
     virtual void OnDeviceStateChanged(DeviceState new_state, DeviceState old_state) {}
 };
 

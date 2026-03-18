@@ -25,6 +25,19 @@
 #define VOLUME_UP_BUTTON_GPIO   GPIO_NUM_NC
 #define VOLUME_DOWN_BUTTON_GPIO GPIO_NUM_NC
 
+// M5GO S3 base 10x WS2812 strip via M5Bus RGB signal.
+// Keep Port B / Port C free for the head gimbal servos below.
+#define M5GO_RGB_LED_GPIO       GPIO_NUM_5
+#define M5GO_RGB_LED_COUNT      10
+
+// M5GO S3 base IR emitter on M5Bus GPIO7.
+// This is wired as a transmit-only IR LED driver.
+#define M5GO_IR_LED_GPIO                    GPIO_NUM_7
+#define PROJECTOR_IR_NEC_ADDRESS            0x00FF
+#define PROJECTOR_IR_NEC_COMMAND            0x45
+#define PROJECTOR_IR_AUTO_SEND_COUNT        3
+#define PROJECTOR_IR_AUTO_SEND_GAP_MS       120
+
 #define DISPLAY_SDA_PIN GPIO_NUM_NC
 #define DISPLAY_SCL_PIN GPIO_NUM_NC
 #define DISPLAY_WIDTH   320
