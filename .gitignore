@@ -1,5 +1,4 @@
 tmp/
-components/
 managed_components/
 build/
 dist/
@@ -20,3 +19,15 @@ mmap_generate_*.h
 .clangd
 ./logs/*
 logs/*
+
+# IDE
+.idea/
+
+# Claude Code local settings
+.claude/
+
+# Binaries / installers
+*.dmg
+
+# 3D model workspace
+m5model/
