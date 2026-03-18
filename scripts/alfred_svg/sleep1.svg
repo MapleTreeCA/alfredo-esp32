@@ -1,0 +1,12 @@
+<svg viewBox="0 0 128 128" aria-hidden="true">
+  <rect x="16" y="52" width="14" height="2" rx="1" fill="#39ff14"/>
+  <rect x="98" y="52" width="14" height="2" rx="1" fill="#39ff14"/>
+
+  <g class="mouth">
+    <path d="M 49 96 L 79 96" stroke="#39ff14" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <g stroke="#39ff14" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M 85 34 L 90 34 L 85 40 L 90 40" stroke-width="1.6"/>
+  </g>
+</svg>
